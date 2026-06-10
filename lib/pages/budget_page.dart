@@ -63,7 +63,7 @@ class _BudgetPageState extends State<BudgetPage> with SingleTickerProviderStateM
                 Text('Categories', 
                   style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black)),
                 const SizedBox(height: 16),
-                _buildCategoryGrid(),
+                _buildCategoryGrid(), // Kotak muat 3 sebaris
                 const SizedBox(height: 120),
               ],
             ),
@@ -123,7 +123,6 @@ class _BudgetPageState extends State<BudgetPage> with SingleTickerProviderStateM
           const SizedBox(height: 8),
           Text("RM 4,000.00", style: GoogleFonts.inter(color: Colors.black, fontSize: 32, fontWeight: FontWeight.w900)),
           const SizedBox(height: 24),
-          // Wave Container
           Container(
             height: 110,
             width: double.infinity,
@@ -198,52 +197,58 @@ class _BudgetPageState extends State<BudgetPage> with SingleTickerProviderStateM
     return Column(
       children: [
         Container(
-          width: 60, height: 60,
+          width: 55, height: 55,
           decoration: BoxDecoration(
             color: Colors.white,
             shape: BoxShape.circle,
             border: Border.all(color: Colors.black.withOpacity(0.05)),
           ),
-          child: Icon(icon, color: Colors.black, size: 24),
+          child: Icon(icon, color: Colors.black, size: 22),
         ),
         const SizedBox(height: 8),
-        Text(label, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.black54)),
+        Text(label, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.black54)),
       ],
     );
   }
 
   Widget _buildCategoryGrid() {
     return GridView.count(
-      crossAxisCount: 2,
+      crossAxisCount: 3, // TUKAR KEPADA 3 SEBARIS
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 15,
-      mainAxisSpacing: 15,
-      childAspectRatio: 0.85,
+      crossAxisSpacing: 12,
+      mainAxisSpacing: 12,
+      childAspectRatio: 0.9, // Menyelaraskan tinggi kotak
       children: [
-        _categoryCard("🍔", const Color(0xFF8B5CF6)),
-        _categoryCard("🚀", const Color(0xFF3B82F6)),
+        _categoryCard("🍔", "Food", const Color(0xFF8B5CF6)),
+        _categoryCard("🚗", "Transport", const Color(0xFF3B82F6)),
+        _categoryCard("🛒", "Shopping", const Color(0xFF10B981)),
       ],
     );
   }
 
-  Widget _categoryCard(String emoji, Color color) {
+  Widget _categoryCard(String emoji, String title, Color color) {
     return Container(
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(30),
+        borderRadius: BorderRadius.circular(24),
       ),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(12),
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(10),
             ),
-            child: Text(emoji, style: const TextStyle(fontSize: 20)),
+            child: Text(emoji, style: const TextStyle(fontSize: 16)),
+          ),
+          const Spacer(),
+          Text(title, 
+            style: GoogleFonts.inter(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -254,10 +259,10 @@ class _BudgetPageState extends State<BudgetPage> with SingleTickerProviderStateM
     return Positioned(
       bottom: 25, left: 20, right: 20,
       child: Container(
-        height: 75,
+        height: 70,
         decoration: BoxDecoration(
           color: Colors.black,
-          borderRadius: BorderRadius.circular(40),
+          borderRadius: BorderRadius.circular(35),
           boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 10))],
         ),
         child: Row(
@@ -266,9 +271,9 @@ class _BudgetPageState extends State<BudgetPage> with SingleTickerProviderStateM
             _navIcon(Icons.home_outlined),
             _navIcon(Icons.wallet_outlined, isSelected: true),
             Container(
-              width: 55, height: 55,
+              width: 50, height: 50,
               decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-              child: const Icon(Icons.add, color: Colors.black, size: 30),
+              child: const Icon(Icons.add, color: Colors.black, size: 28),
             ),
             _navIcon(Icons.bar_chart_outlined),
             _navIcon(Icons.person_outline_rounded),
@@ -279,7 +284,7 @@ class _BudgetPageState extends State<BudgetPage> with SingleTickerProviderStateM
   }
 
   Widget _navIcon(IconData icon, {bool isSelected = false}) {
-    return Icon(icon, color: isSelected ? Colors.white : Colors.white54, size: 26);
+    return Icon(icon, color: isSelected ? Colors.white : Colors.white54, size: 24);
   }
 }
 

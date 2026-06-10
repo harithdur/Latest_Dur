@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:project_1/transactions_page.dart'; // Digunakan untuk navigasi header/kad
+import 'package:project_1/pages/transactions_page.dart'; // Dibetulkan
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -60,7 +60,6 @@ class HomePage extends StatelessWidget {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Membuka Drawer yang didefinisikan di submain.dart
             Padding(
               padding: const EdgeInsets.only(top: 4.0),
               child: IconButton(
