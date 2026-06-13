@@ -1,17 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
-// Import fail anda dari folder pages (Dibetulkan)
-import 'package:project_1/pages/homepage.dart';
-import 'package:project_1/pages/transactions_page.dart';
-import 'package:project_1/pages/budget_page.dart';
-import 'package:project_1/pages/report_page.dart';
-import 'package:project_1/pages/profile_page.dart';
-import 'package:project_1/pages/settings_page.dart';
+// Import fail Dur
+import 'package:project_1/Dur_pages/homepage.dart';
+import 'package:project_1/Dur_pages/transactions_page.dart';
+import 'package:project_1/Dur_pages/budget_page.dart';
+import 'package:project_1/Dur_pages/report_page.dart';
+import 'package:project_1/Dur_pages/settings_page.dart';
 
-// Import fail kawan anda dari folder lib
-import 'package:project_1/pages/income.management.dart';
-import 'package:project_1/pages/category.management.dart';
+// Import fail Amira
+import 'package:project_1/Amira_pages/income.management.dart';
+import 'package:project_1/Amira_pages/category.management.dart';
+
+// Import komponen Zaim
+import 'package:project_1/Zaim_pages/add_goal.dart'; 
+import 'package:project_1/Zaim_pages/insights.dart'; 
+import 'package:project_1/Zaim_pages/notifications.dart';
+
+// Import fail Zahida
+import 'package:project_1/Zahida_pages/expenses_management.dart';
+import 'package:project_1/Zahida_pages/recurring_transactions.dart';
+import 'package:project_1/Zahida_pages/user_profile.dart';
+import 'package:project_1/Zahida_pages/providers.dart';
+
+// --- MODEL GOAL ---
+class Goal {
+  final String title;
+  final double targetAmount;
+  double savedAmount;
+  final Color color;
+  final IconData icon;
+
+  Goal({
+    required this.title,
+    required this.targetAmount,
+    required this.savedAmount,
+    required this.color,
+    required this.icon,
+  });
+
+  double get progress => (targetAmount > 0) ? (savedAmount / targetAmount).clamp(0.0, 1.0) : 0.0;
+}
 
 class SubMain extends StatefulWidget {
   const SubMain({super.key});
@@ -23,7 +54,6 @@ class SubMain extends StatefulWidget {
 class _SubMainState extends State<SubMain> {
   int _selectedIndex = 0;
 
-  // DATA KATEGORI (Terkongsi antara Dashboard, Income, dan Category Page)
   List<CategoryModel> _sharedCategories = [
     CategoryModel(id: '1', name: 'Food & Dining', icon: '🍔', color: const Color(0xFFFF5722)),
     CategoryModel(id: '2', name: 'Transport', icon: '🚗', color: const Color(0xFF4CAF50)),
@@ -35,68 +65,84 @@ class _SubMainState extends State<SubMain> {
   ];
 
   void _updateCategories(List<CategoryModel> newCategories) {
-    setState(() {
-      _sharedCategories = newCategories;
-    });
+    setState(() => _sharedCategories = newCategories);
+  }
+
+  void _goToDashboard() {
+    setState(() => _selectedIndex = 0);
   }
 
   @override
   Widget build(BuildContext context) {
     const Color sidebarBg = Color(0xFF111827);
 
-    // Senarai halaman mengikut turutan menu
-    final List<Widget> _pages = [
-      const HomePage(),         // Index 0
-      const TransactionsPage(),  // Index 1
-      const BudgetPage(),        // Index 2
-      IncomeManagement(categories: _sharedCategories), // Index 3
-      CategoryManagementPage(    // Index 4
-        categories: _sharedCategories,
-        onCategoriesUpdated: _updateCategories,
-      ),
-      const ReportPage(),        // Index 5
-      const ProfilePage(),       // Index 6
-      const SettingsPage(),      // Index 7
-    ];
-
-    return Scaffold(
-      drawer: Drawer(
-        width: 280,
-        child: Container(
-          color: sidebarBg,
-          padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildBrandLogo(),
-              const SizedBox(height: 40),
-              
-              _sidebarNavItem(Icons.home_filled, 'Dashboard', 0),
-              _sidebarNavItem(Icons.list_alt_rounded, 'Transactions', 1),
-              _sidebarNavItem(Icons.account_balance_wallet_rounded, 'Budget', 2),
-              
-              const Divider(color: Colors.white10, height: 32),
-              const Text('MANAGEMENT', 
-                style: TextStyle(color: Colors.white30, fontSize: 10, letterSpacing: 1.2)),
-              const SizedBox(height: 16),
-              
-              _sidebarNavItem(Icons.add_chart_rounded, 'Incomes', 3),
-              _sidebarNavItem(Icons.category_rounded, 'Categories', 4),
-              
-              const Divider(color: Colors.white10, height: 32),
-              _sidebarNavItem(Icons.bar_chart_rounded, 'Reports', 5),
-              _sidebarNavItem(Icons.person_outline_rounded, 'Profile', 6),
-              _sidebarNavItem(Icons.settings_outlined, 'Settings', 7),
-              
-              const Spacer(),
-              _sidebarNavItem(Icons.logout_rounded, 'Logout', 99, isLogout: true),
-            ],
+    return ChangeNotifierProvider(
+      create: (context) => FinanceProvider(),
+      child: Scaffold(
+        drawer: Drawer(
+          width: 280,
+          child: Container(
+            color: sidebarBg,
+            padding: const EdgeInsets.symmetric(vertical: 25, horizontal: 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildBrandLogo().animate().fadeIn(duration: 300.ms).slideX(begin: -0.1),
+                const SizedBox(height: 25),
+                
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: AnimateList(
+                      interval: 20.ms,
+                      effects: [FadeEffect(duration: 200.ms), SlideEffect(begin: const Offset(-0.05, 0))],
+                      children: [
+                        _sidebarNavItem(Icons.home_filled, 'Dashboard', 0),
+                        _sidebarNavItem(Icons.list_alt_rounded, 'Transactions', 1),
+                        _sidebarNavItem(Icons.add_chart_rounded, 'Incomes', 2),
+                        _sidebarNavItem(Icons.money_off_rounded, 'Expenses', 3),
+                        _sidebarNavItem(Icons.event_repeat_rounded, 'Recurring Bills', 4),
+                        _sidebarNavItem(Icons.account_balance_wallet_rounded, 'Budget', 5),
+                        _sidebarNavItem(Icons.track_changes_rounded, 'Financial Goals', 6),
+                        _sidebarNavItem(Icons.category_rounded, 'Categories', 7),
+                        _sidebarNavItem(Icons.bar_chart_rounded, 'Reports', 8),
+                        _sidebarNavItem(Icons.person_outline_rounded, 'Profile', 9),
+                        _sidebarNavItem(Icons.settings_outlined, 'Settings', 10),
+                      ],
+                    ),
+                  ),
+                ),
+                _sidebarNavItem(Icons.logout_rounded, 'Logout', 99, isLogout: true).animate().fadeIn(delay: 400.ms),
+              ],
+            ),
           ),
         ),
-      ),
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _pages,
+        body: IndexedStack(
+          index: _selectedIndex,
+          children: [
+            // Dashboard (Index 0)
+            HomePage(onNavigate: (index) {
+              setState(() => _selectedIndex = index); // Gunakan index terus
+            }), 
+            TransactionsPage(onBack: _goToDashboard), // Index 1
+            IncomeManagement(categories: _sharedCategories, onBack: _goToDashboard), // Index 2
+            ExpenseManagementPage(onBack: _goToDashboard), // Index 3
+            RecurringTransactionsPage(onBack: _goToDashboard), // Index 4
+            BudgetPage(onBack: _goToDashboard), // Index 5
+            GoalsPage(onBack: _goToDashboard), // Index 6
+            CategoryManagementPage(
+              categories: _sharedCategories,
+              onCategoriesUpdated: _updateCategories,
+              onBack: _goToDashboard,
+            ), // Index 7
+            ReportPage(onBack: _goToDashboard), // Index 8
+            UserProfilePage(onBack: _goToDashboard), // Index 9
+            SettingsPage(onBack: _goToDashboard), // Index 10
+          ].map((page) => page.animate(key: ValueKey(_selectedIndex))
+                .fadeIn(duration: 200.ms, curve: Curves.easeOut)
+                .scale(begin: const Offset(0.99, 0.99), duration: 200.ms, curve: Curves.easeOut)
+          ).toList(),
+        ),
       ),
     );
   }
@@ -107,25 +153,16 @@ class _SubMainState extends State<SubMain> {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(12),
+            gradient: const LinearGradient(colors: [Color(0xFF8B5CF6), Color(0xFF6D28D9)]),
+            borderRadius: BorderRadius.circular(10),
           ),
-          child: const Icon(Icons.auto_graph_rounded, color: Colors.white, size: 24),
+          child: const Icon(Icons.auto_graph_rounded, color: Colors.white, size: 20),
         ),
-        const SizedBox(width: 14),
-        Text(
-          'Smart Financial\nTracker',
-          style: GoogleFonts.inter(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.w900,
-            height: 1.1,
-            letterSpacing: -0.2,
-          ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text('Smart Financial\nTracker', 
+            style: GoogleFonts.inter(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900, height: 1.1, letterSpacing: -0.2),
+            overflow: TextOverflow.ellipsis),
         ),
       ],
     );
@@ -134,31 +171,143 @@ class _SubMainState extends State<SubMain> {
   Widget _sidebarNavItem(IconData icon, String label, int index, {bool isLogout = false}) {
     bool isSelected = _selectedIndex == index;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.only(bottom: 8), 
       child: InkWell(
+        mouseCursor: SystemMouseCursors.click,
         onTap: () {
           if (!isLogout) {
             setState(() => _selectedIndex = index);
             Navigator.pop(context);
+          } else {
+             Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
           }
         },
         child: Row(
           children: [
-            Icon(icon,
-              color: isLogout ? Colors.redAccent : (isSelected ? Colors.white : Colors.white54),
-              size: 22
-            ),
-            const SizedBox(width: 16),
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                color: isLogout ? Colors.redAccent : (isSelected ? Colors.white : Colors.white54),
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                fontSize: 15,
-              ),
+            Icon(icon, color: isLogout ? Colors.redAccent : (isSelected ? Colors.white : Colors.white54), size: 18),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(label, 
+                style: GoogleFonts.inter(
+                  color: isLogout ? Colors.redAccent : (isSelected ? Colors.white : Colors.white54), 
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500, 
+                  fontSize: 13),
+                overflow: TextOverflow.ellipsis),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// --- KELAS GOALSPAGE ---
+class GoalsPage extends StatefulWidget {
+  final VoidCallback onBack;
+  const GoalsPage({super.key, required this.onBack});
+  @override
+  State<GoalsPage> createState() => _GoalsPageState();
+}
+
+class _GoalsPageState extends State<GoalsPage> {
+  int _tabIndex = 0;
+  final List<Goal> _goals = [];
+
+  Future<void> _navigateToConfirmAddGoal(BuildContext context) async {
+    final result = await Navigator.push(context, MaterialPageRoute(builder: (context) => const AddGoalPage()));
+    if (result != null && result is Map<String, String>) {
+      double target = double.tryParse(result['target']!.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0;
+      setState(() {
+        _goals.add(Goal(title: result['title']!, targetAmount: target, savedAmount: 0, color: const Color(0xFF8B5CF6), icon: Icons.star_border));
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF9FAFB),
+      appBar: AppBar(
+        title: Text(_tabIndex == 0 ? "Financial Goals" : "Insights", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.black)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: IconButton(icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black, size: 20), onPressed: widget.onBack),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(_tabIndex == 0 ? Icons.insights_rounded : Icons.list_alt_rounded, color: const Color(0xFF8B5CF6)),
+            onPressed: () => setState(() => _tabIndex = _tabIndex == 0 ? 1 : 0),
+          ),
+          IconButton(
+            icon: const Icon(Icons.notifications_none_rounded, color: Colors.black), 
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationsPage())),
+          ),
+        ],
+      ),
+      body: _tabIndex == 0 ? _buildGoalsContent() : const InsightsPage(),
+    );
+  }
+
+  Widget _buildGoalsContent() {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          _buildHero(),
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: _goals.isEmpty 
+              ? const Center(child: Text("No goals yet. Start by adding a new one!", style: TextStyle(color: Colors.grey)))
+              : Wrap(
+                  spacing: 16, runSpacing: 16,
+                  children: List.generate(_goals.length, (i) => _goalCard(_goals[i], i)),
+                ),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHero() {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(colors: [Color(0xFF8B5CF6), Color(0xFF6D28D9)]),
+        borderRadius: BorderRadius.circular(30),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FittedBox(fit: BoxFit.scaleDown, child: const Text("Turn Savings Into\nBig Achievements", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold))),
+          const SizedBox(height: 20),
+          ElevatedButton.icon(
+            onPressed: () => _navigateToConfirmAddGoal(context),
+            icon: const Icon(Icons.add), label: const Text("Add New Goal"),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: const Color(0xFF8B5CF6)),
+          ).animate(onPlay: (c) => c.repeat(reverse: true)).scale(end: const Offset(1.03, 1.03), duration: 1.seconds),
+        ],
+      ),
+    );
+  }
+
+  Widget _goalCard(Goal goal, int index) {
+    return Container(
+      width: 160, padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)]),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(goal.icon, color: goal.color, size: 20),
+          const SizedBox(height: 12),
+          Text(goal.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13), overflow: TextOverflow.ellipsis),
+          const SizedBox(height: 8),
+          LinearProgressIndicator(value: goal.progress, color: goal.color, backgroundColor: goal.color.withOpacity(0.1), minHeight: 4),
+          const SizedBox(height: 8),
+          Text("RM${goal.savedAmount.toStringAsFixed(0)}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+        ],
       ),
     );
   }

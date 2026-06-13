@@ -18,11 +18,13 @@ class CategoryModel {
 class CategoryManagementPage extends StatefulWidget {
   final List<CategoryModel> categories;
   final Function(List<CategoryModel>) onCategoriesUpdated;
+  final VoidCallback? onBack; // Tambah ini
 
   const CategoryManagementPage({
     super.key,
     required this.categories,
     required this.onCategoriesUpdated,
+    this.onBack,
   });
 
   @override
@@ -30,12 +32,9 @@ class CategoryManagementPage extends StatefulWidget {
 }
 
 class _CategoryManagementPageState extends State<CategoryManagementPage> {
-  // Theme Colors (Disesuaikan dengan tema Modern Clean anda)
   final Color bgColor = const Color(0xFFF3F4F6);
   final Color cardColor = Colors.white;
   final Color accentColor = const Color(0xFF8B5CF6);
-  final Color textPrimary = const Color(0xFF111827);
-  final Color textSecondary = const Color(0xFF6B7280);
 
   late List<CategoryModel> _categories;
 
@@ -57,16 +56,14 @@ class _CategoryManagementPageState extends State<CategoryManagementPage> {
           builder: (BuildContext context, StateSetter setDialogState) {
             return AlertDialog(
               title: Text(editItem == null ? 'Add Category' : 'Edit Category'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Name')),
-                    TextField(controller: iconController, decoration: const InputDecoration(labelText: 'Icon (Emoji)')),
-                    const SizedBox(height: 20),
-                    _buildColorPicker(selectedColor, (c) => setDialogState(() => selectedColor = c)),
-                  ],
-                ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Name')),
+                  TextField(controller: iconController, decoration: const InputDecoration(labelText: 'Icon')),
+                  const SizedBox(height: 20),
+                  _buildColorPicker(selectedColor, (c) => setDialogState(() => selectedColor = c)),
+                ],
               ),
               actions: [
                 TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
@@ -105,53 +102,32 @@ class _CategoryManagementPageState extends State<CategoryManagementPage> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        // BUTANG BACK
         leading: IconButton(
-          icon: const Icon(Icons.menu, color: Colors.black),
-          onPressed: () => Scaffold.of(context).openDrawer(), // Buka drawer utama
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: widget.onBack ?? () => Navigator.pop(context),
         ),
-        title: Text('Category Management', style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold, fontSize: 18)),
+        title: const Text('Category Management', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 18)),
         centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('ALL CATEGORIES', style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
-            const SizedBox(height: 16),
-            Expanded(
-              child: ListView.builder(
-                itemCount: _categories.length,
-                itemBuilder: (context, index) {
-                  final item = _categories[index];
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(color: cardColor, borderRadius: BorderRadius.circular(20)),
-                    child: ListTile(
-                      leading: Text(item.icon, style: const TextStyle(fontSize: 24)),
-                      title: Text(item.name, style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold)),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(icon: const Icon(Icons.edit_outlined, size: 20), onPressed: () => _showCategoryDialog(editItem: item)),
-                          IconButton(icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20), 
-                            onPressed: () {
-                              List<CategoryModel> updated = List<CategoryModel>.from(_categories);
-                              updated.removeWhere((c) => c.id == item.id);
-                              setState(() => _categories = updated);
-                              widget.onCategoriesUpdated(updated);
-                            }
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
+      body: ListView.builder(
+        padding: const EdgeInsets.all(20),
+        itemCount: _categories.length,
+        itemBuilder: (context, index) {
+          final item = _categories[index];
+          return Card(
+            margin: const EdgeInsets.only(bottom: 12),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            child: ListTile(
+              leading: Text(item.icon, style: const TextStyle(fontSize: 24)),
+              title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+              trailing: IconButton(
+                icon: const Icon(Icons.edit_outlined),
+                onPressed: () => _showCategoryDialog(editItem: item),
               ),
             ),
-          ],
-        ),
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.black,
@@ -162,7 +138,7 @@ class _CategoryManagementPageState extends State<CategoryManagementPage> {
   }
 
   Widget _buildColorPicker(Color current, Function(Color) onSelect) {
-    final List<Color> colors = [Colors.red, Colors.green, Colors.blue, Colors.orange, Colors.purple, Colors.pink, Colors.teal];
+    final List<Color> colors = [Colors.red, Colors.green, Colors.blue, Colors.orange, Colors.purple];
     return Wrap(
       spacing: 10,
       children: colors.map((c) => GestureDetector(
