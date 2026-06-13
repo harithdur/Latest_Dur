@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:project_1/Dur_pages/transactions_page.dart';
-import 'dart:ui'; 
+import 'dart:ui';
+// 1. Import Provider untuk guna Consumer
+import 'package:provider/provider.dart';
+
+// 2. Import fail provider awak (sesuaikan path folder jika perlu)
+import 'package:project_1/Zahida_pages/providers.dart';
 
 class HomePage extends StatelessWidget {
   final Function(int)? onNavigate;
@@ -137,17 +142,29 @@ class HomePage extends StatelessWidget {
                 children: [
                   Text('Main balance', style: GoogleFonts.inter(color: Colors.white.withOpacity(0.8), fontSize: 14, fontWeight: FontWeight.w500)),
                   const SizedBox(height: 4),
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text('RM 10,500.00', style: GoogleFonts.inter(color: Colors.white, fontSize: 38, fontWeight: FontWeight.bold)),
+                  Consumer<FinanceProvider>(
+                    builder: (context, finance, child) {
+                      // Kita kira baki (Income - Expense)
+                      // Nota: Kalau belum ada field 'income' di Provider,
+                      // awak boleh tukar logic ni ikut kesesuaian
+                      double balance = 10500.00 - finance.totalExpenses;
+
+                      return FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                            'RM ${balance.toStringAsFixed(2)}',
+                            style: GoogleFonts.inter(color: Colors.white, fontSize: 38, fontWeight: FontWeight.bold)
+                        ),
+                      );
+                    },
                   ),
                   const Spacer(),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      _glassActionBtn(Icons.trending_up_rounded, "Income", true, true, () => onNavigate?.call(3)),
+                      _glassActionBtn(Icons.trending_up_rounded, "Income", true, true, () => onNavigate?.call(2)),
                       const SizedBox(width: 12),
-                      _glassActionBtn(Icons.trending_down_rounded, "Expense", true, true, () => onNavigate?.call(6)),
+                      _glassActionBtn(Icons.trending_down_rounded, "Expense", true, true, () => onNavigate?.call(3)),
                       const SizedBox(width: 12),
                       _glassActionBtn(Icons.share_outlined, "Share", false, false, null),
                       const SizedBox(width: 12),

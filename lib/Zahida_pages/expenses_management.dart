@@ -127,11 +127,10 @@ class ExpenseManagementPage extends StatelessWidget {
         centerTitle: true,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20), // Padding dilaraskan
+        padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Summary Card
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(24),
@@ -144,7 +143,7 @@ class ExpenseManagementPage extends StatelessWidget {
                 children: [
                   const Text("Today's Expenses", style: TextStyle(color: Colors.white70, fontSize: 13)),
                   const SizedBox(height: 8),
-                  FittedBox( // DIBETULKAN: Elak overflow
+                  FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text("RM ${finance.totalExpenses.toStringAsFixed(2)}",
                         style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
@@ -190,11 +189,12 @@ class ExpenseManagementPage extends StatelessWidget {
       child: Row(
         children: [
           CircleAvatar(
-            backgroundColor: expense.color.withOpacity(0.1),
-            child: Icon(expense.icon, color: expense.color),
+            // DIBETULKAN: Ditambah null check (?? Colors.grey)
+            backgroundColor: (expense.color ?? Colors.grey).withOpacity(0.1),
+            child: Icon(expense.icon ?? Icons.category, color: expense.color ?? Colors.grey),
           ),
           const SizedBox(width: 12),
-          Expanded( // DIBETULKAN: Pastikan teks tidak tolak column keluar
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -210,7 +210,7 @@ class ExpenseManagementPage extends StatelessWidget {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  FittedBox( // DIBETULKAN: Nilai RM takkan melimpah
+                  FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text("- RM ${expense.amount.toStringAsFixed(2)}",
                         style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent, fontSize: 14)),

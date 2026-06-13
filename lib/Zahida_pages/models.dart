@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Expense {
   final String id;
@@ -6,8 +7,8 @@ class Expense {
   final double amount;
   final String category;
   final DateTime date;
-  final IconData icon;
-  final Color color;
+  final IconData? icon;
+  final Color? color;
 
   Expense({
     required this.id,
@@ -15,8 +16,8 @@ class Expense {
     required this.amount,
     required this.category,
     required this.date,
-    required this.icon,
-    required this.color,
+    this.icon,
+    this.color,
   });
 }
 
@@ -38,17 +39,17 @@ class RecurringBill {
     required this.amount,
     required this.icon,
     required this.color,
-    this.category = "Subscription",
+    required this.category,
   });
 }
 
 class UserProfile {
-  String name;
-  String email;
-  double monthlyIncome;
-  String phone;
-  DateTime dob;
-  String address;
+  final String name;
+  final String email;
+  final double monthlyIncome;
+  final String phone;
+  final DateTime dob;
+  final String address;
 
   UserProfile({
     required this.name,

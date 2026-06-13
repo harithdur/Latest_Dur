@@ -181,7 +181,7 @@ class _ExpenseModuleState extends State<ExpenseModule> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: e.color.withOpacity(0.1),
+          backgroundColor: (e.color ?? Colors.grey).withOpacity(0.1),
           child: Icon(e.icon, color: e.color, size: 20),
         ),
         title: Text(e.description, style: const TextStyle(fontWeight: FontWeight.bold)),

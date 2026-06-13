@@ -74,6 +74,15 @@ class _SubMainState extends State<SubMain> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    // Panggil fungsi untuk mula mendengar data dari Firebase sebaik sahaja app buka
+    Future.microtask(() {
+      Provider.of<FinanceProvider>(context, listen: false).listenToExpenses();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     const Color sidebarBg = Color(0xFF111827);
 
