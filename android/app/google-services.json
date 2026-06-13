@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "81338366652",
+    "project_id": "smart-tracker-dab36",
+    "storage_bucket": "smart-tracker-dab36.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:81338366652:android:0057e0e7d69fab46aa6eb9",
+        "android_client_info": {
+          "package_name": "com.example.project_1"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "81338366652-k4rq4fkph57io8ng40ilrg2cah0ub65s.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB955Cl0vVXDEb93KWHXUonpCJfgUPnKUY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "81338366652-k4rq4fkph57io8ng40ilrg2cah0ub65s.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
