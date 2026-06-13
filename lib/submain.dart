@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // <-- 1. Tambah import Firebase Auth di sini
+import 'package:firebase_auth/firebase_auth.dart';
 
 // Import fail Dur
 import 'package:project_1/Dur_pages/homepage.dart';
@@ -16,8 +16,8 @@ import 'package:project_1/Amira_pages/income.management.dart';
 import 'package:project_1/Amira_pages/category.management.dart';
 
 // Import komponen Zaim
-import 'package:project_1/Zaim_pages/add_goal.dart';
-import 'package:project_1/Zaim_pages/insights.dart';
+import 'package:project_1/Zaim_pages/add_goal.dart'; 
+import 'package:project_1/Zaim_pages/insights.dart'; 
 import 'package:project_1/Zaim_pages/notifications.dart';
 
 // Import fail Zahida
@@ -61,8 +61,6 @@ class _SubMainState extends State<SubMain> {
     CategoryModel(id: '3', name: 'Shopping', icon: '🛒', color: const Color(0xFF2196F3)),
     CategoryModel(id: '4', name: 'Housing', icon: '🏠', color: const Color(0xFF9C27B0)),
     CategoryModel(id: '5', name: 'Salary', icon: '💰', color: const Color(0xFF8B5CF6)),
-    CategoryModel(id: '6', name: 'Freelance', icon: '💻', color: const Color(0xFF00BCD4)),
-    CategoryModel(id: '7', name: 'Investment', icon: '📈', color: const Color(0xFFFF9800)),
   ];
 
   void _updateCategories(List<CategoryModel> newCategories) {
@@ -76,9 +74,11 @@ class _SubMainState extends State<SubMain> {
   @override
   void initState() {
     super.initState();
-    // Panggil fungsi untuk mula mendengar data dari Firebase sebaik sahaja app buka
+    // Mula mendengar data Firebase sebaik sahaja masuk ke SubMain
     Future.microtask(() {
-      Provider.of<FinanceProvider>(context, listen: false).listenToExpenses();
+      final finance = Provider.of<FinanceProvider>(context, listen: false);
+      finance.listenToExpenses();
+      finance.listenToIncomes();
     });
   }
 
@@ -86,73 +86,68 @@ class _SubMainState extends State<SubMain> {
   Widget build(BuildContext context) {
     const Color sidebarBg = Color(0xFF111827);
 
-    return ChangeNotifierProvider(
-      create: (context) => FinanceProvider(),
-      child: Scaffold(
-        drawer: Drawer(
-          width: 280,
-          child: Container(
-            color: sidebarBg,
-            padding: const EdgeInsets.symmetric(vertical: 25, horizontal: 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildBrandLogo().animate().fadeIn(duration: 300.ms).slideX(begin: -0.1),
-                const SizedBox(height: 25),
-
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: AnimateList(
-                      interval: 20.ms,
-                      effects: [FadeEffect(duration: 200.ms), SlideEffect(begin: const Offset(-0.05, 0))],
-                      children: [
-                        _sidebarNavItem(Icons.home_filled, 'Dashboard', 0),
-                        _sidebarNavItem(Icons.list_alt_rounded, 'Transactions', 1),
-                        _sidebarNavItem(Icons.add_chart_rounded, 'Incomes', 2),
-                        _sidebarNavItem(Icons.money_off_rounded, 'Expenses', 3),
-                        _sidebarNavItem(Icons.event_repeat_rounded, 'Recurring Bills', 4),
-                        _sidebarNavItem(Icons.account_balance_wallet_rounded, 'Budget', 5),
-                        _sidebarNavItem(Icons.track_changes_rounded, 'Financial Goals', 6),
-                        _sidebarNavItem(Icons.category_rounded, 'Categories', 7),
-                        _sidebarNavItem(Icons.bar_chart_rounded, 'Reports', 8),
-                        _sidebarNavItem(Icons.person_outline_rounded, 'Profile', 9),
-                        _sidebarNavItem(Icons.settings_outlined, 'Settings', 10),
-                      ],
-                    ),
+    // DIBETULKAN: Buang ChangeNotifierProvider dari sini supaya guna yang di main.dart
+    return Scaffold(
+      drawer: Drawer(
+        width: 280,
+        child: Container(
+          color: sidebarBg,
+          padding: const EdgeInsets.symmetric(vertical: 25, horizontal: 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildBrandLogo().animate().fadeIn(duration: 300.ms).slideX(begin: -0.1),
+              const SizedBox(height: 25),
+              
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: AnimateList(
+                    interval: 20.ms,
+                    effects: [FadeEffect(duration: 200.ms), SlideEffect(begin: const Offset(-0.05, 0))],
+                    children: [
+                      _sidebarNavItem(Icons.home_filled, 'Dashboard', 0),
+                      _sidebarNavItem(Icons.list_alt_rounded, 'Transactions', 1),
+                      _sidebarNavItem(Icons.add_chart_rounded, 'Incomes', 2),
+                      _sidebarNavItem(Icons.money_off_rounded, 'Expenses', 3),
+                      _sidebarNavItem(Icons.event_repeat_rounded, 'Recurring Bills', 4),
+                      _sidebarNavItem(Icons.account_balance_wallet_rounded, 'Budget', 5),
+                      _sidebarNavItem(Icons.track_changes_rounded, 'Financial Goals', 6),
+                      _sidebarNavItem(Icons.category_rounded, 'Categories', 7),
+                      _sidebarNavItem(Icons.bar_chart_rounded, 'Reports', 8),
+                      _sidebarNavItem(Icons.person_outline_rounded, 'Profile', 9),
+                      _sidebarNavItem(Icons.settings_outlined, 'Settings', 10),
+                    ],
                   ),
                 ),
-                _sidebarNavItem(Icons.logout_rounded, 'Logout', 99, isLogout: true).animate().fadeIn(delay: 400.ms),
-              ],
-            ),
+              ),
+              _sidebarNavItem(Icons.logout_rounded, 'Logout', 99, isLogout: true).animate().fadeIn(delay: 400.ms),
+            ],
           ),
         ),
-        body: IndexedStack(
-          index: _selectedIndex,
-          children: [
-            // Dashboard (Index 0)
-            HomePage(onNavigate: (index) {
-              setState(() => _selectedIndex = index); // Gunakan index terus
-            }),
-            TransactionsPage(onBack: _goToDashboard), // Index 1
-            IncomeManagement(categories: _sharedCategories, onBack: _goToDashboard), // Index 2
-            ExpenseManagementPage(onBack: _goToDashboard), // Index 3
-            RecurringTransactionsPage(onBack: _goToDashboard), // Index 4
-            BudgetPage(onBack: _goToDashboard), // Index 5
-            GoalsPage(onBack: _goToDashboard), // Index 6
-            CategoryManagementPage(
-              categories: _sharedCategories,
-              onCategoriesUpdated: _updateCategories,
-              onBack: _goToDashboard,
-            ), // Index 7
-            ReportPage(onBack: _goToDashboard), // Index 8
-            UserProfilePage(onBack: _goToDashboard), // Index 9
-            SettingsPage(onBack: _goToDashboard), // Index 10
-          ].map((page) => page.animate(key: ValueKey(_selectedIndex))
+      ),
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: [
+          HomePage(onNavigate: (index) => setState(() => _selectedIndex = index)), 
+          TransactionsPage(onBack: _goToDashboard), 
+          IncomeManagement(categories: _sharedCategories, onBack: _goToDashboard), 
+          ExpenseManagementPage(onBack: _goToDashboard), 
+          RecurringTransactionsPage(onBack: _goToDashboard), 
+          BudgetPage(onBack: _goToDashboard), 
+          GoalsPage(onBack: _goToDashboard), 
+          CategoryManagementPage(
+            categories: _sharedCategories,
+            onCategoriesUpdated: _updateCategories,
+            onBack: _goToDashboard,
+          ), 
+          ReportPage(onBack: _goToDashboard), 
+          UserProfilePage(onBack: _goToDashboard), 
+          SettingsPage(onBack: _goToDashboard), 
+        ].map((page) => page.animate(key: ValueKey(_selectedIndex))
               .fadeIn(duration: 200.ms, curve: Curves.easeOut)
               .scale(begin: const Offset(0.99, 0.99), duration: 200.ms, curve: Curves.easeOut)
-          ).toList(),
-        ),
+        ).toList(),
       ),
     );
   }
@@ -166,13 +161,13 @@ class _SubMainState extends State<SubMain> {
             gradient: const LinearGradient(colors: [Color(0xFF8B5CF6), Color(0xFF6D28D9)]),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: const Icon(Icons.auto_graph_rounded, color: Colors.white, size: 20),
+          child: const Icon(Icons.auto_graph_rounded, color: Colors.white, size: 24),
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: Text('Smart Financial\nTracker',
-              style: GoogleFonts.inter(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900, height: 1.1, letterSpacing: -0.2),
-              overflow: TextOverflow.ellipsis),
+          child: Text('Smart Financial\nTracker', 
+            style: GoogleFonts.inter(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900, height: 1.1, letterSpacing: -0.2),
+            overflow: TextOverflow.ellipsis),
         ),
       ],
     );
@@ -181,29 +176,28 @@ class _SubMainState extends State<SubMain> {
   Widget _sidebarNavItem(IconData icon, String label, int index, {bool isLogout = false}) {
     bool isSelected = _selectedIndex == index;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 8), 
       child: InkWell(
         mouseCursor: SystemMouseCursors.click,
-        // <-- 2. Jadikan fungsi ini async dan kemas kini fungsi Logout
         onTap: () async {
           if (!isLogout) {
             setState(() => _selectedIndex = index);
             Navigator.pop(context);
           } else {
-            await FirebaseAuth.instance.signOut(); // Gunakan fungsi Firebase untuk logout
+             await FirebaseAuth.instance.signOut();
           }
         },
         child: Row(
           children: [
-            Icon(icon, color: isLogout ? Colors.redAccent : (isSelected ? Colors.white : Colors.white54), size: 18),
+            Icon(icon, color: isLogout ? Colors.redAccent : (isSelected ? Colors.white : Colors.white54), size: 22),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(label,
-                  style: GoogleFonts.inter(
-                      color: isLogout ? Colors.redAccent : (isSelected ? Colors.white : Colors.white54),
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                      fontSize: 13),
-                  overflow: TextOverflow.ellipsis),
+              child: Text(label, 
+                style: GoogleFonts.inter(
+                  color: isLogout ? Colors.redAccent : (isSelected ? Colors.white : Colors.white54), 
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500, 
+                  fontSize: 15),
+                overflow: TextOverflow.ellipsis),
             ),
           ],
         ),
@@ -212,7 +206,6 @@ class _SubMainState extends State<SubMain> {
   }
 }
 
-// --- KELAS GOALSPAGE ---
 class GoalsPage extends StatefulWidget {
   final VoidCallback onBack;
   const GoalsPage({super.key, required this.onBack});
@@ -252,7 +245,7 @@ class _GoalsPageState extends State<GoalsPage> {
             onPressed: () => setState(() => _tabIndex = _tabIndex == 0 ? 1 : 0),
           ),
           IconButton(
-            icon: const Icon(Icons.notifications_none_rounded, color: Colors.black),
+            icon: const Icon(Icons.notifications_none_rounded, color: Colors.black), 
             onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationsPage())),
           ),
         ],
@@ -268,12 +261,12 @@ class _GoalsPageState extends State<GoalsPage> {
           _buildHero(),
           Padding(
             padding: const EdgeInsets.all(24),
-            child: _goals.isEmpty
-                ? const Center(child: Text("No goals yet. Start by adding a new one!", style: TextStyle(color: Colors.grey)))
-                : Wrap(
-              spacing: 16, runSpacing: 16,
-              children: List.generate(_goals.length, (i) => _goalCard(_goals[i], i)),
-            ),
+            child: _goals.isEmpty 
+              ? const Center(child: Text("No goals yet. Start by adding a new one!", style: TextStyle(color: Colors.grey)))
+              : Wrap(
+                  spacing: 16, runSpacing: 16,
+                  children: List.generate(_goals.length, (i) => _goalCard(_goals[i], i)),
+                ),
           )
         ],
       ),

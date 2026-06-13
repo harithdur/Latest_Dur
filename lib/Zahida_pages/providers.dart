@@ -16,38 +16,14 @@ class FinanceProvider extends ChangeNotifier {
   List<Map<String, dynamic>> get incomes => _incomes;
   List<RecurringBill> get recurringBills => _recurringBills;
 
-  // Base values for Guest Mode
-  double _guestIncome = 15000.00;
-  double _guestExpense = 4500.00;
-
-  double get totalIncome {
-    if (_incomes.isEmpty && _auth.currentUser == null) return _guestIncome;
-    return _incomes.fold(0.0, (sum, item) => sum + (item['amount'] as num).toDouble());
-  }
-
-  double get totalExpenses {
-    if (_expenses.isEmpty && _auth.currentUser == null) return _guestExpense;
-    return _expenses.fold(0.0, (sum, item) => sum + item.amount);
-  }
-
+  double get totalIncome => _incomes.fold(0.0, (sum, item) => sum + (item['amount'] as num).toDouble());
+  double get totalExpenses => _expenses.fold(0.0, (sum, item) => sum + item.amount);
   double get totalBalance => totalIncome - totalExpenses;
   double get totalMonthlyCommitments => _recurringBills.fold(0.0, (sum, item) => sum + item.amount);
 
   FinanceProvider() {
-    _init();
-  }
-
-  void _init() {
-    _auth.authStateChanges().listen((user) {
-      if (user != null) {
-        listenToExpenses();
-        listenToIncomes();
-      } else {
-        _expenses = [];
-        _incomes = [];
-        notifyListeners();
-      }
-    });
+    listenToExpenses();
+    listenToIncomes();
   }
 
   void listenToExpenses() {
@@ -65,8 +41,6 @@ class FinanceProvider extends ChangeNotifier {
           amount: (doc['amount'] as num).toDouble(),
           category: doc['category'] ?? 'General',
           date: (doc['date'] as Timestamp).toDate(),
-          color: _getColorForCategory(doc['category'] ?? ''),
-          icon: _getIconForCategory(doc['category'] ?? ''),
         );
       }).toList();
       notifyListeners();
@@ -98,7 +72,6 @@ class FinanceProvider extends ChangeNotifier {
     User? user = _auth.currentUser;
     if (user == null) {
       _expenses.insert(0, expense);
-      _guestExpense = 0; // Stop using base value once user adds data
       notifyListeners();
       return;
     }
@@ -111,7 +84,8 @@ class FinanceProvider extends ChangeNotifier {
     });
   }
 
-  Future<void> addIncome(String title, double amount, String category, DateTime date) async {
+  // --- FUNGSI GLOBAL UNTUK INCOME ---
+  Future<void> addIncome(String title, double amount, String category) async {
     User? user = _auth.currentUser;
     if (user == null) {
       _incomes.insert(0, {
@@ -119,9 +93,8 @@ class FinanceProvider extends ChangeNotifier {
         'title': title,
         'amount': amount,
         'category': category,
-        'date': DateFormat('dd MMM').format(date),
+        'date': DateFormat('dd MMM').format(DateTime.now()),
       });
-      _guestIncome = 0;
       notifyListeners();
       return;
     }
@@ -129,7 +102,7 @@ class FinanceProvider extends ChangeNotifier {
       'title': title,
       'amount': amount,
       'category': category,
-      'date': Timestamp.fromDate(date),
+      'date': Timestamp.now(),
       'type': 'income',
     });
   }
@@ -162,26 +135,5 @@ class FinanceProvider extends ChangeNotifier {
   void removeRecurringBill(String id) {
     _recurringBills.removeWhere((item) => item.id == id);
     notifyListeners();
-  }
-
-  // Helpers
-  Color _getColorForCategory(String cat) {
-    switch (cat) {
-      case 'Food': return Colors.orange;
-      case 'Transport': return Colors.blue;
-      case 'Bills': return Colors.green;
-      case 'Shopping': return Colors.pink;
-      default: return Colors.purple;
-    }
-  }
-
-  IconData _getIconForCategory(String cat) {
-    switch (cat) {
-      case 'Food': return Icons.restaurant;
-      case 'Transport': return Icons.directions_car;
-      case 'Bills': return Icons.receipt_long;
-      case 'Shopping': return Icons.shopping_bag;
-      default: return Icons.category;
-    }
   }
 }
