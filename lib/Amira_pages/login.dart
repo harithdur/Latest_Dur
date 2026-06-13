@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:project_1/submain.dart'; 
+import 'package:firebase_auth/firebase_auth.dart'; // Tambahan Firebase
+import 'package:project_1/auth_service.dart'; // Tambahan AuthService
+import 'package:project_1/submain.dart';
 import 'user_registration.dart';
 
 class LoginPage extends StatefulWidget {
@@ -11,6 +13,7 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
+  final AuthService _authService = AuthService(); // Tambahan instance AuthService
 
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -24,6 +27,7 @@ class _LoginPageState extends State<LoginPage> {
 
   bool _isPasswordVisible = false;
   bool _rememberMe = false;
+  bool _isLoading = false; // Tambahan state loading
 
   @override
   void dispose() {
@@ -32,19 +36,36 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  void _handleLogin() {
+  // Wayar Firebase dimasukkan di sini
+  Future<void> _handleLogin() async {
     if (_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Login Successful!'),
-          backgroundColor: Colors.green.shade600,
-        ),
-      );
-      
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const SubMain()),
-      );
+      setState(() => _isLoading = true);
+
+      try {
+        await _authService.signInWithEmail(
+          _emailController.text.trim(),
+          _passwordController.text,
+        );
+        // Tak perlu Navigator, StreamBuilder di main.dart akan terus bawa ke SubMain
+
+      } on FirebaseAuthException catch (e) {
+        String errorMessage = 'Login failed. Please try again.';
+        if (e.code == 'invalid-credential' || e.code == 'wrong-password' || e.code == 'user-not-found') {
+          errorMessage = 'Invalid email or password.';
+        } else if (e.code == 'too-many-requests') {
+          errorMessage = 'Too many attempts. Please try again later.';
+        }
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
+      }
     }
   }
 
@@ -57,7 +78,7 @@ class _LoginPageState extends State<LoginPage> {
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
             child: Container(
-              constraints: const BoxConstraints(maxWidth: 400), // Hadkan lebar kad di desktop
+              constraints: const BoxConstraints(maxWidth: 400),
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: cardColor,
@@ -79,20 +100,13 @@ class _LoginPageState extends State<LoginPage> {
                     Text(
                       'Welcome Back',
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: textPrimary,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: TextStyle(color: textPrimary, fontSize: 28, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Sign in to continue',
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: textSecondary.withAlpha(180),
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: textSecondary.withAlpha(180), fontSize: 14),
                     ),
                     const SizedBox(height: 32),
                     _buildTextField(
@@ -113,10 +127,7 @@ class _LoginPageState extends State<LoginPage> {
                       icon: Icons.lock_outline,
                       obscureText: !_isPasswordVisible,
                       suffixIcon: IconButton(
-                        icon: Icon(
-                          _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                          color: Colors.grey,
-                        ),
+                        icon: Icon(_isPasswordVisible ? Icons.visibility : Icons.visibility_off, color: Colors.grey),
                         onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
                       ),
                       validator: (value) {
@@ -124,8 +135,7 @@ class _LoginPageState extends State<LoginPage> {
                         return null;
                       },
                     ),
-                    
-                    // DIBETULKAN: Gunakan Wrap untuk elak ralat kuning skrin kecil
+
                     Wrap(
                       alignment: WrapAlignment.spaceBetween,
                       crossAxisAlignment: WrapCrossAlignment.center,
@@ -155,20 +165,23 @@ class _LoginPageState extends State<LoginPage> {
 
                     const SizedBox(height: 20),
                     ElevatedButton(
-                      onPressed: _handleLogin,
+                      onPressed: _isLoading ? null : _handleLogin,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: accentColor,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Text('Login', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      // Tukar butang jadi loading kalau _isLoading = true
+                      child: _isLoading
+                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : const Text('Login', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     ),
                     const SizedBox(height: 24),
-                    
+
                     Column(
                       children: [
-                        Wrap( // DIBETULKAN
+                        Wrap(
                           alignment: WrapAlignment.center,
                           children: [
                             Text("Don't have an account? ", style: TextStyle(color: textSecondary.withAlpha(200), fontSize: 13)),
@@ -181,10 +194,7 @@ class _LoginPageState extends State<LoginPage> {
                                     MaterialPageRoute(builder: (context) => const UserRegistrationPage()),
                                   );
                                 },
-                                child: Text(
-                                  'Sign Up',
-                                  style: TextStyle(color: accentColor, fontSize: 13, fontWeight: FontWeight.bold),
-                                ),
+                                child: Text('Sign Up', style: TextStyle(color: accentColor, fontSize: 13, fontWeight: FontWeight.bold)),
                               ),
                             ),
                           ],
@@ -201,11 +211,7 @@ class _LoginPageState extends State<LoginPage> {
                             },
                             child: Text(
                               'Skip for now',
-                              style: TextStyle(
-                                color: textSecondary.withOpacity(0.6),
-                                fontSize: 12,
-                                decoration: TextDecoration.underline,
-                              ),
+                              style: TextStyle(color: textSecondary.withOpacity(0.6), fontSize: 12, decoration: TextDecoration.underline),
                             ),
                           ),
                         ),

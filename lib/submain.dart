@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // <-- 1. Tambah import Firebase Auth di sini
 
 // Import fail Dur
 import 'package:project_1/Dur_pages/homepage.dart';
@@ -15,8 +16,8 @@ import 'package:project_1/Amira_pages/income.management.dart';
 import 'package:project_1/Amira_pages/category.management.dart';
 
 // Import komponen Zaim
-import 'package:project_1/Zaim_pages/add_goal.dart'; 
-import 'package:project_1/Zaim_pages/insights.dart'; 
+import 'package:project_1/Zaim_pages/add_goal.dart';
+import 'package:project_1/Zaim_pages/insights.dart';
 import 'package:project_1/Zaim_pages/notifications.dart';
 
 // Import fail Zahida
@@ -89,7 +90,7 @@ class _SubMainState extends State<SubMain> {
               children: [
                 _buildBrandLogo().animate().fadeIn(duration: 300.ms).slideX(begin: -0.1),
                 const SizedBox(height: 25),
-                
+
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -123,7 +124,7 @@ class _SubMainState extends State<SubMain> {
             // Dashboard (Index 0)
             HomePage(onNavigate: (index) {
               setState(() => _selectedIndex = index); // Gunakan index terus
-            }), 
+            }),
             TransactionsPage(onBack: _goToDashboard), // Index 1
             IncomeManagement(categories: _sharedCategories, onBack: _goToDashboard), // Index 2
             ExpenseManagementPage(onBack: _goToDashboard), // Index 3
@@ -139,8 +140,8 @@ class _SubMainState extends State<SubMain> {
             UserProfilePage(onBack: _goToDashboard), // Index 9
             SettingsPage(onBack: _goToDashboard), // Index 10
           ].map((page) => page.animate(key: ValueKey(_selectedIndex))
-                .fadeIn(duration: 200.ms, curve: Curves.easeOut)
-                .scale(begin: const Offset(0.99, 0.99), duration: 200.ms, curve: Curves.easeOut)
+              .fadeIn(duration: 200.ms, curve: Curves.easeOut)
+              .scale(begin: const Offset(0.99, 0.99), duration: 200.ms, curve: Curves.easeOut)
           ).toList(),
         ),
       ),
@@ -160,9 +161,9 @@ class _SubMainState extends State<SubMain> {
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: Text('Smart Financial\nTracker', 
-            style: GoogleFonts.inter(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900, height: 1.1, letterSpacing: -0.2),
-            overflow: TextOverflow.ellipsis),
+          child: Text('Smart Financial\nTracker',
+              style: GoogleFonts.inter(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900, height: 1.1, letterSpacing: -0.2),
+              overflow: TextOverflow.ellipsis),
         ),
       ],
     );
@@ -171,15 +172,16 @@ class _SubMainState extends State<SubMain> {
   Widget _sidebarNavItem(IconData icon, String label, int index, {bool isLogout = false}) {
     bool isSelected = _selectedIndex == index;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8), 
+      padding: const EdgeInsets.only(bottom: 8),
       child: InkWell(
         mouseCursor: SystemMouseCursors.click,
-        onTap: () {
+        // <-- 2. Jadikan fungsi ini async dan kemas kini fungsi Logout
+        onTap: () async {
           if (!isLogout) {
             setState(() => _selectedIndex = index);
             Navigator.pop(context);
           } else {
-             Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+            await FirebaseAuth.instance.signOut(); // Gunakan fungsi Firebase untuk logout
           }
         },
         child: Row(
@@ -187,12 +189,12 @@ class _SubMainState extends State<SubMain> {
             Icon(icon, color: isLogout ? Colors.redAccent : (isSelected ? Colors.white : Colors.white54), size: 18),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(label, 
-                style: GoogleFonts.inter(
-                  color: isLogout ? Colors.redAccent : (isSelected ? Colors.white : Colors.white54), 
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500, 
-                  fontSize: 13),
-                overflow: TextOverflow.ellipsis),
+              child: Text(label,
+                  style: GoogleFonts.inter(
+                      color: isLogout ? Colors.redAccent : (isSelected ? Colors.white : Colors.white54),
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                      fontSize: 13),
+                  overflow: TextOverflow.ellipsis),
             ),
           ],
         ),
@@ -241,7 +243,7 @@ class _GoalsPageState extends State<GoalsPage> {
             onPressed: () => setState(() => _tabIndex = _tabIndex == 0 ? 1 : 0),
           ),
           IconButton(
-            icon: const Icon(Icons.notifications_none_rounded, color: Colors.black), 
+            icon: const Icon(Icons.notifications_none_rounded, color: Colors.black),
             onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationsPage())),
           ),
         ],
@@ -257,12 +259,12 @@ class _GoalsPageState extends State<GoalsPage> {
           _buildHero(),
           Padding(
             padding: const EdgeInsets.all(24),
-            child: _goals.isEmpty 
-              ? const Center(child: Text("No goals yet. Start by adding a new one!", style: TextStyle(color: Colors.grey)))
-              : Wrap(
-                  spacing: 16, runSpacing: 16,
-                  children: List.generate(_goals.length, (i) => _goalCard(_goals[i], i)),
-                ),
+            child: _goals.isEmpty
+                ? const Center(child: Text("No goals yet. Start by adding a new one!", style: TextStyle(color: Colors.grey)))
+                : Wrap(
+              spacing: 16, runSpacing: 16,
+              children: List.generate(_goals.length, (i) => _goalCard(_goals[i], i)),
+            ),
           )
         ],
       ),

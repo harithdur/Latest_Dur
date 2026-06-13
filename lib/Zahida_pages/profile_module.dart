@@ -1,110 +1,136 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart'; // Pakej intl dari pubspec.yaml untuk format tarikh
 
-class ProfileModule extends StatelessWidget {
-  final double income;
-  const ProfileModule({super.key, required this.income});
+class UserProfilePage extends StatelessWidget {
+  final VoidCallback onBack;
+
+  // Menerima parameter onBack dari SubMain supaya butang back berfungsi
+  const UserProfilePage({super.key, required this.onBack});
 
   @override
   Widget build(BuildContext context) {
+    // Dapatkan maklumat pengguna yang sedang login
+    final user = FirebaseAuth.instance.currentUser;
+    const Color primaryColor = Color(0xFF8B5CF6);
+
+    if (user == null) {
+      return const Center(child: Text('Sila log masuk.'));
+    }
+
     return Scaffold(
+      backgroundColor: const Color(0xFFF9FAFB),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text("User Profile", style: TextStyle(fontWeight: FontWeight.bold)),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Column(
-          children: [
-            const SizedBox(height: 20),
-            Center(
-              child: Column(
-                children: [
-                  const CircleAvatar(
-                    radius: 50,
-                    backgroundColor: Color(0xFF8B5CF6),
-                    child: Text("AH", style: TextStyle(fontSize: 32, color: Colors.white, fontWeight: FontWeight.bold)),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text("Aiman Hakim", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                  const Text("Premium Member", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500)),
-                ],
-              ),
-            ),
-            const SizedBox(height: 30),
-            Card(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              elevation: 0,
-              color: Colors.white,
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text("Monthly Income", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500)),
-                        _buildDropdown(),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Text("RM ${income.toStringAsFixed(2)}", 
-                      style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF8B5CF6))),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Card(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              elevation: 0,
-              color: Colors.white,
-              child: Column(
-                children: [
-                  _infoTile("Full Name", "Aiman Hakim"),
-                  _divider(),
-                  _infoTile("Email", "aiman@email.com"),
-                  _divider(),
-                  _infoTile("Phone Number", "012-345 6789"),
-                  _divider(),
-                  _infoTile("Date of Birth", "12 May 1995"),
-                  _divider(),
-                  _infoTile("Address", "Kuala Lumpur, Malaysia"),
-                ],
-              ),
-            ),
-            const SizedBox(height: 30),
-          ],
+        leading: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black, size: 20),
+            onPressed: onBack,
+          ),
         ),
+        title: const Text('My Profile', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        centerTitle: true,
+      ),
+      // StreamBuilder membaca live stream data dari dokumen pengguna
+      body: StreamBuilder<DocumentSnapshot>(
+        stream: FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots(),
+        builder: (context, snapshot) {
+          // Paparkan loading semasa data sedang ditarik dari server
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator(color: primaryColor));
+          }
+
+          if (snapshot.hasError) {
+            return const Center(child: Text('Ralat memuatkan profil.'));
+          }
+
+          if (!snapshot.hasData || !snapshot.data!.exists) {
+            return const Center(child: Text('Data profil tidak dijumpai.'));
+          }
+
+          // Ekstrak data dari format Map Firestore
+          final data = snapshot.data!.data() as Map<String, dynamic>?;
+          final name = data?['name'] ?? '—';
+          final email = data?['email'] ?? '—';
+          final phone = data?['phone'] ?? '—';
+          final Timestamp? createdAtTimestamp = data?['createdAt'];
+
+          // Format tarikh jadi cantik (contoh: 13 Jun 2026)
+          String formattedDate = '—';
+          if (createdAtTimestamp != null) {
+            formattedDate = DateFormat('d MMM yyyy').format(createdAtTimestamp.toDate());
+          }
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              children: [
+                // Avatar Profil Bulat
+                CircleAvatar(
+                  radius: 50,
+                  backgroundColor: primaryColor.withOpacity(0.1),
+                  child: Text(
+                    name.isNotEmpty ? name[0].toUpperCase() : '?',
+                    style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: primaryColor),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(name, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black)),
+                const SizedBox(height: 4),
+                Text(email, style: const TextStyle(fontSize: 14, color: Colors.grey)),
+                const SizedBox(height: 32),
+
+                // Paparan Kad Maklumat
+                _buildProfileItem(Icons.person_outline, 'Full Name', name),
+                _buildProfileItem(Icons.email_outlined, 'Email Address', email),
+                _buildProfileItem(Icons.phone_outlined, 'Phone Number', phone),
+                _buildProfileItem(Icons.calendar_today_outlined, 'Date Registered', formattedDate),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildDropdown() {
+  // Fungsi pembantu untuk reka bentuk UI (Kad Info)
+  Widget _buildProfileItem(IconData icon, String title, String value) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9),
-        borderRadius: BorderRadius.circular(8),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
       ),
-      child: const Row(
+      child: Row(
         children: [
-          Text("RM Ringgit Malaysia", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-          Icon(Icons.arrow_drop_down, size: 18),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFF8B5CF6).withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: const Color(0xFF8B5CF6), size: 20),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                const SizedBox(height: 4),
+                Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.black)),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
-
-  Widget _infoTile(String title, String value) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-      title: Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.w500)),
-      subtitle: Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
-      trailing: const Icon(Icons.chevron_right, color: Colors.grey),
-    );
-  }
-
-  Widget _divider() => const Divider(height: 1, indent: 20, endIndent: 20, color: Color(0xFFF1F5F9));
 }
