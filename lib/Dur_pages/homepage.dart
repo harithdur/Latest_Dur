@@ -139,7 +139,7 @@ class HomePage extends StatelessWidget {
                   const SizedBox(height: 4),
                   FittedBox(
                     fit: BoxFit.scaleDown,
-                    child: Text('RM 3,465.80', style: GoogleFonts.inter(color: Colors.white, fontSize: 38, fontWeight: FontWeight.bold)),
+                    child: Text('RM 10,500.00', style: GoogleFonts.inter(color: Colors.white, fontSize: 38, fontWeight: FontWeight.bold)),
                   ),
                   const Spacer(),
                   Row(
@@ -199,9 +199,9 @@ class HomePage extends StatelessWidget {
   Widget _buildIncomeExpenseSummary() {
     return Row(
       children: [
-        Expanded(child: _summaryCard("Income", "RM 5,000", Icons.arrow_upward, Colors.green)),
+        Expanded(child: _summaryCard("Income", "RM 15,000", Icons.arrow_upward, Colors.green)),
         const SizedBox(width: 12),
-        Expanded(child: _summaryCard("Expense", "RM 1,200", Icons.arrow_downward, Colors.redAccent)),
+        Expanded(child: _summaryCard("Expense", "RM 4,500", Icons.arrow_downward, Colors.redAccent)),
       ],
     );
   }

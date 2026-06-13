@@ -135,7 +135,7 @@ class _BudgetPageState extends State<BudgetPage> with SingleTickerProviderStateM
                   const SizedBox(height: 4),
                   FittedBox( // DIBETULKAN
                     fit: BoxFit.scaleDown,
-                    child: Text("RM 4,000.00", style: GoogleFonts.inter(color: Colors.white, fontSize: 36, fontWeight: FontWeight.w900)),
+                    child: Text("RM 3,000.00", style: GoogleFonts.inter(color: Colors.white, fontSize: 36, fontWeight: FontWeight.w900)),
                   ),
                   const SizedBox(height: 16),
                   Container(
@@ -158,9 +158,9 @@ class _BudgetPageState extends State<BudgetPage> with SingleTickerProviderStateM
   Widget _buildQuickStats() {
     return Row(
       children: [
-        Expanded(child: _miniStatCard("Spent", "RM 2,640", Colors.redAccent)),
+        Expanded(child: _miniStatCard("Spent", "RM 1,800", Colors.redAccent)),
         const SizedBox(width: 12),
-        Expanded(child: _miniStatCard("Remaining", "RM 1,360", Colors.green)),
+        Expanded(child: _miniStatCard("Remaining", "RM 1,200", Colors.green)),
       ],
     );
   }

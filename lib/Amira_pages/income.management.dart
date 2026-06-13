@@ -19,9 +19,8 @@ class IncomeManagement extends StatefulWidget {
 
 class _IncomeManagementState extends State<IncomeManagement> {
   final List<Map<String, dynamic>> _incomeList = [
-    {'id': '1', 'title': 'Monthly Salary', 'category': 'Salary', 'amount': 8500.00, 'date': '01 Jun'},
-    {'id': '2', 'title': 'Freelance UI Design', 'category': 'Freelance', 'amount': 2400.00, 'date': '05 Jun'},
-    {'id': '3', 'title': 'Dividend Payout', 'category': 'Investment', 'amount': 450.00, 'date': '20 May'},
+    {'id': '1', 'title': 'Monthly Salary', 'category': 'Salary', 'amount': 12000.00, 'date': '01 Jun'},
+    {'id': '2', 'title': 'Project Bonus', 'category': 'Freelance', 'amount': 3000.00, 'date': '05 Jun'},
   ];
 
   final Color primaryPurple = const Color(0xFF8B5CF6);

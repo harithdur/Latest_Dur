@@ -14,8 +14,18 @@ class FinanceProvider extends ChangeNotifier {
   List<Expense> _expenses = [
     Expense(
       id: '1',
+      description: "Car Istallment",
+      amount: 1500.00,
+      category: "Car",
+      date: DateTime.now(),
+      icon: Icons.car_rental,
+      color: Colors.purple,
+    ),
+
+    Expense(
+      id: '1',
       description: "Lunch at Pavillion",
-      amount: 28.50,
+      amount: 850.00,
       category: "Food",
       date: DateTime.now(),
       icon: Icons.restaurant,

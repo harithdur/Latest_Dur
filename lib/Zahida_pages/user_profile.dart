@@ -3,6 +3,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:provider/provider.dart';
+import 'package:project_1/Amira_pages/login.dart';
+import 'package:project_1/Amira_pages/user_registration.dart';
+import 'providers.dart';
+import 'models.dart';
 
 class UserProfilePage extends StatefulWidget {
   final VoidCallback? onBack;
@@ -14,6 +19,7 @@ class UserProfilePage extends StatefulWidget {
 
 class _UserProfilePageState extends State<UserProfilePage> {
   bool _isEditing = false;
+  bool _isLoading = false;
 
   late TextEditingController _nameController;
   late TextEditingController _emailController;
@@ -26,7 +32,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
   @override
   void initState() {
     super.initState();
-    // Initialize controllers with empty strings first
     _nameController = TextEditingController();
     _emailController = TextEditingController();
     _phoneController = TextEditingController();
@@ -78,24 +83,25 @@ class _UserProfilePageState extends State<UserProfilePage> {
     );
   }
 
-  // Fungsi simpan data ke Firebase bila user tekan Save Changes
   Future<void> _saveProfileChanges() async {
     if (user != null) {
+      setState(() => _isLoading = true);
       try {
         await _firestore.collection('users').doc(user!.uid).update({
           'name': _nameController.text.trim(),
           'phone': _phoneController.text.trim(),
           'address': _addressController.text.trim(),
         });
-
-        // Update display name di Firebase Auth juga
         await user!.updateDisplayName(_nameController.text.trim());
-
-        setState(() => _isEditing = false);
+        setState(() {
+          _isEditing = false;
+          _isLoading = false;
+        });
         _showSuccessPopup();
       } catch (e) {
+        setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error updating profile: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -105,8 +111,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
   Widget build(BuildContext context) {
     const Color accentPurple = Color(0xFF8B5CF6);
 
+    // PAPARAN GUEST MODE JIKA USER NULL
     if (user == null) {
-      return const Scaffold(body: Center(child: Text("Sila log masuk.")));
+      return _buildGuestMode(context, accentPurple);
     }
 
     return Scaffold(
@@ -121,26 +128,21 @@ class _UserProfilePageState extends State<UserProfilePage> {
           onPressed: widget.onBack ?? () => Navigator.pop(context),
         ),
       ),
-      // StreamBuilder membaca live data dari Firestore
       body: StreamBuilder<DocumentSnapshot>(
         stream: _firestore.collection('users').doc(user!.uid).snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator(color: accentPurple));
           }
-
           if (!snapshot.hasData || !snapshot.data!.exists) {
             return const Center(child: Text('Data profil tidak dijumpai.'));
           }
-
-          // Dapatkan data dari Firestore
           final data = snapshot.data!.data() as Map<String, dynamic>?;
           final dbName = data?['name'] ?? '—';
           final dbEmail = data?['email'] ?? '—';
           final dbPhone = data?['phone'] ?? '—';
           final dbAddress = data?['address'] ?? '—';
 
-          // Jika tak tengah edit, sentiasa pastikan text box ikut data database terkini
           if (!_isEditing) {
             _nameController.text = dbName;
             _emailController.text = dbEmail;
@@ -154,66 +156,41 @@ class _UserProfilePageState extends State<UserProfilePage> {
               children: [
                 _buildProfileHeader(dbName, dbEmail, accentPurple),
                 const SizedBox(height: 32),
-
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: Text(
-                    "Personal Information",
-                    style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFF1F2937)),
-                  ),
+                  child: Text("Personal Information", style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFF1F2937))),
                 ),
                 const SizedBox(height: 16),
-
                 Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)],
-                  ),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)]),
                   child: Column(
                     children: [
                       _buildEditableTile(Icons.person_outline, "Full Name", _nameController),
-                      _buildEditableTile(Icons.email_outlined, "Email", _emailController, readOnly: true), // Email tak boleh edit
+                      _buildEditableTile(Icons.email_outlined, "Email", _emailController, readOnly: true),
                       _buildEditableTile(Icons.phone_android, "Phone Number", _phoneController),
                       _buildEditableTile(Icons.home_outlined, "Address", _addressController, isLast: true),
                     ],
                   ),
                 ),
-
                 const SizedBox(height: 40),
-
                 Row(
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: () {
-                          setState(() => _isEditing = !_isEditing);
-                        },
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          side: BorderSide(color: _isEditing ? Colors.redAccent : accentPurple, width: 1.5),
-                        ),
-                        child: Text(
-                          _isEditing ? "Cancel" : "Edit Profile",
-                          style: GoogleFonts.inter(color: _isEditing ? Colors.redAccent : accentPurple, fontWeight: FontWeight.bold),
-                        ),
+                        onPressed: () => setState(() => _isEditing = !_isEditing),
+                        style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), side: BorderSide(color: _isEditing ? Colors.redAccent : accentPurple, width: 1.5)),
+                        child: Text(_isEditing ? "Cancel" : "Edit Profile", style: GoogleFonts.inter(color: _isEditing ? Colors.redAccent : accentPurple, fontWeight: FontWeight.bold)),
                       ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: !_isEditing ? null : () => _saveProfileChanges(),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: accentPurple,
-                          foregroundColor: Colors.white,
-                          disabledBackgroundColor: Colors.grey.shade300,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          elevation: 0,
-                        ),
-                        child: const Text("Save Changes", style: TextStyle(fontWeight: FontWeight.bold)),
+                        onPressed: !_isEditing || _isLoading ? null : () => _saveProfileChanges(),
+                        style: ElevatedButton.styleFrom(backgroundColor: accentPurple, foregroundColor: Colors.white, disabledBackgroundColor: Colors.grey.shade300, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0),
+                        child: _isLoading 
+                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : Text("Save Changes", style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
                       ),
                     ),
                   ],
@@ -222,6 +199,93 @@ class _UserProfilePageState extends State<UserProfilePage> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildGuestMode(BuildContext context, Color accentPurple) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF9FAFB),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: widget.onBack ?? () => Navigator.pop(context),
+        ),
+      ),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(32.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(28),
+                decoration: BoxDecoration(color: accentPurple.withOpacity(0.1), shape: BoxShape.circle),
+                child: Icon(Icons.person_outline_rounded, color: accentPurple, size: 80),
+              ).animate().scale(duration: 400.ms, curve: Curves.easeOutBack), 
+              
+              const SizedBox(height: 32),
+              
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  "Join Smart Tracker",
+                  style: GoogleFonts.inter(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.black87),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                "Sign in to sync your financial data and unlock all features of the app.",
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(fontSize: 14, color: Colors.black45, height: 1.5),
+              ),
+              
+              const SizedBox(height: 48),
+              
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const LoginPage()), (route) => false);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: accentPurple,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      elevation: 0,
+                    ),
+                    child: Text("Log In Now", style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16)),
+                  ),
+                ),
+              ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.1),
+              
+              const SizedBox(height: 16),
+              
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: OutlinedButton(
+                    onPressed: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => const UserRegistrationPage()));
+                    },
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: accentPurple, width: 2),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                    child: Text("Create Account", style: GoogleFonts.inter(color: accentPurple, fontWeight: FontWeight.bold, fontSize: 16)),
+                  ),
+                ),
+              ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -242,7 +306,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
           ),
         ),
         const SizedBox(height: 16),
-        Text(name, style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.bold)),
+        FittedBox(fit: BoxFit.scaleDown, child: Text(name, style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.bold))),
         Text(email, style: GoogleFonts.inter(color: Colors.grey, fontSize: 14)),
       ],
     ).animate().fadeIn().scale();
@@ -253,26 +317,26 @@ class _UserProfilePageState extends State<UserProfilePage> {
       children: [
         ListTile(
           leading: Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(color: const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(12)),
             child: Icon(icon, color: const Color(0xFF8B5CF6), size: 20),
           ),
           title: Text(title, style: GoogleFonts.inter(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.w500)),
           subtitle: _isEditing && !readOnly
               ? TextField(
-            controller: controller,
-            style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 15),
-            decoration: InputDecoration(
-                hintText: 'Enter $title',
-                isDense: true,
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.only(top: 4)
-            ),
-          )
+                  controller: controller,
+                  style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 15),
+                  decoration: InputDecoration(
+                    hintText: 'Enter $title',
+                    isDense: true,
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.only(top: 4)
+                  ),
+                )
               : Text(
-              controller.text.isEmpty ? '—' : controller.text,
-              style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 15, color: readOnly ? Colors.grey : const Color(0xFF1F2937))
-          ),
+                  controller.text.isEmpty ? '—' : controller.text,
+                  style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 15, color: readOnly ? Colors.grey : const Color(0xFF1F2937))
+                ),
         ),
         if (!isLast) Divider(height: 1, color: Colors.grey.shade100, indent: 70),
       ],
