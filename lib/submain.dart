@@ -188,7 +188,17 @@ class _SubMainState extends State<SubMain> {
           } else {
             // --- KOD LOGOUT BARU ---
             await FirebaseAuth.instance.signOut(); // 1. Logout dari Firebase
+// Selepas await _authService.signInWithEmail(...)
+            if (mounted) {
+              // Panggil provider untuk refresh data berdasarkan user ID yang baru
+              Provider.of<FinanceProvider>(context, listen: false).listenToExpenses();
+              Provider.of<FinanceProvider>(context, listen: false).listenToIncomes();
 
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const SubMain()),
+              );
+            }
             if (mounted) {
               // 2. Navigasi ke LoginPage dan buang semua halaman sebelumnya
               Navigator.pushAndRemoveUntil(

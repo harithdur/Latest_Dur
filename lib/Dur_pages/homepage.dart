@@ -103,6 +103,27 @@ class HomePage extends StatelessWidget {
     );
   }
 
+  // --- LETAK FUNGSI INI DI SINI (SEBELUM KURUNGAN PENUTUP KELAS) ---
+  void _showResetConfirmationDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Clear Data"),
+        content: const Text("Are you sure you want to delete all data?"),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          TextButton(
+            onPressed: () {
+              Provider.of<FinanceProvider>(context, listen: false).resetAllData();
+              Navigator.pop(context);
+            },
+            child: const Text("Proceed", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildGlassBalanceCard(BuildContext context, Color themeColor) {
     return Container(
       width: double.infinity,
@@ -192,8 +213,9 @@ class HomePage extends StatelessWidget {
                           Icons.trending_down_rounded, "Expense", true,
                           true, () => onNavigate?.call(3)),
                       const SizedBox(width: 12),
-                      _glassActionBtn(
-                          Icons.share_outlined, "Share", false, false, null),
+                      _glassActionBtn(Icons.refresh, "Reset", false, true, () {
+                        _showResetConfirmationDialog(context); // Panggil dialog pengesahan
+                      }),
                       const SizedBox(width: 12),
                       _glassActionBtn(
                           Icons.more_horiz, "Details", false, false, null),
