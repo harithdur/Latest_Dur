@@ -14,6 +14,7 @@ import 'package:project_1/Dur_pages/settings_page.dart';
 // Import fail Amira
 import 'package:project_1/Amira_pages/income.management.dart';
 import 'package:project_1/Amira_pages/category.management.dart';
+import 'package:project_1/Amira_pages/login.dart';
 
 // Import komponen Zaim
 import 'package:project_1/Zaim_pages/add_goal.dart'; 
@@ -179,12 +180,23 @@ class _SubMainState extends State<SubMain> {
       padding: const EdgeInsets.only(bottom: 8), 
       child: InkWell(
         mouseCursor: SystemMouseCursors.click,
+// Lokasi: submain.dart -> dalam fungsi _sidebarNavItem
         onTap: () async {
           if (!isLogout) {
             setState(() => _selectedIndex = index);
             Navigator.pop(context);
           } else {
-             await FirebaseAuth.instance.signOut();
+            // --- KOD LOGOUT BARU ---
+            await FirebaseAuth.instance.signOut(); // 1. Logout dari Firebase
+
+            if (mounted) {
+              // 2. Navigasi ke LoginPage dan buang semua halaman sebelumnya
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => const LoginPage()),
+                    (route) => false, // false bermakna buang semua history stack
+              );
+            }
           }
         },
         child: Row(

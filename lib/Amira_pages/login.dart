@@ -42,13 +42,22 @@ class _LoginPageState extends State<LoginPage> {
       setState(() => _isLoading = true);
 
       try {
+        // 1. Cuba log masuk
         await _authService.signInWithEmail(
           _emailController.text.trim(),
           _passwordController.text,
         );
-        // Tak perlu Navigator, StreamBuilder di main.dart akan terus bawa ke SubMain
+
+        // 2. Jika berjaya, terus pindah ke SubMain (Sini tempat letak navigasi)
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const SubMain()),
+          );
+        }
 
       } on FirebaseAuthException catch (e) {
+        // 3. Bahagian ini KEKAL untuk tangkap error (Sangat penting!)
         String errorMessage = 'Login failed. Please try again.';
         if (e.code == 'invalid-credential' || e.code == 'wrong-password' || e.code == 'user-not-found') {
           errorMessage = 'Invalid email or password.';
