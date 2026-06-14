@@ -26,6 +26,8 @@ class FinanceProvider extends ChangeNotifier {
     listenToIncomes();
   }
 
+
+
   void listenToExpenses() {
     User? user = _auth.currentUser;
     if (user == null) return;
