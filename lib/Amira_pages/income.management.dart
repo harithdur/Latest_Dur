@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart'; 
+import 'package:provider/provider.dart'; // Tambah ini
+import 'package:project_1/Zahida_pages/providers.dart'; // Tambah ini
 import 'category.management.dart';
 
 class IncomeManagement extends StatefulWidget {
@@ -18,20 +20,14 @@ class IncomeManagement extends StatefulWidget {
 }
 
 class _IncomeManagementState extends State<IncomeManagement> {
-  final List<Map<String, dynamic>> _incomeList = [
-    {'id': '1', 'title': 'Monthly Salary', 'category': 'Salary', 'amount': 12000.00, 'date': '01 Jun'},
-    {'id': '2', 'title': 'Project Bonus', 'category': 'Freelance', 'amount': 3000.00, 'date': '05 Jun'},
-  ];
-
   final Color primaryPurple = const Color(0xFF8B5CF6);
   final Color bgColor = const Color(0xFFF9FAFB);
 
   void _showAddIncomeDialog() {
     final titleController = TextEditingController();
-    final categoryController = TextEditingController();
     final amountController = TextEditingController();
-    DateTime selectedDate = DateTime.now();
-    final dateController = TextEditingController(text: DateFormat('dd MMM').format(selectedDate));
+    String selectedCategory = 'Salary';
+    final finance = Provider.of<FinanceProvider>(context, listen: false);
 
     showDialog(
       context: context,
@@ -45,51 +41,36 @@ class _IncomeManagementState extends State<IncomeManagement> {
               children: [
                 _buildPopupField(titleController, 'Income Source', Icons.source),
                 const SizedBox(height: 16),
-                _buildPopupField(categoryController, 'Category', Icons.category_outlined),
-                const SizedBox(height: 16),
-                _buildPopupField(amountController, 'Amount (RM)', Icons.attach_money, isNumber: true),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: dateController,
-                  readOnly: true,
+                DropdownButtonFormField<String>(
+                  value: selectedCategory,
                   decoration: InputDecoration(
-                    labelText: 'Date',
-                    prefixIcon: Icon(Icons.calendar_today, color: primaryPurple),
+                    labelText: 'Category',
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  onTap: () async {
-                    DateTime? pickedDate = await showDatePicker(
-                      context: context,
-                      initialDate: selectedDate,
-                      firstDate: DateTime(2000),
-                      lastDate: DateTime(2101),
-                    );
-                    if (pickedDate != null) {
-                      setDialogState(() {
-                        selectedDate = pickedDate;
-                        dateController.text = DateFormat('dd MMM').format(pickedDate);
-                      });
-                    }
-                  },
+                  items: ['Salary', 'Freelance', 'Investment', 'Other']
+                      .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                      .toList(),
+                  onChanged: (val) => setDialogState(() => selectedCategory = val!),
                 ),
+                const SizedBox(height: 16),
+                _buildPopupField(amountController, 'Amount (RM)', Icons.attach_money, isNumber: true),
               ],
             ),
           ),
           actions: [
             TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: primaryPurple, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryPurple, 
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
+              ),
               onPressed: () {
                 if (titleController.text.isNotEmpty && amountController.text.isNotEmpty) {
-                  setState(() {
-                    _incomeList.insert(0, {
-                      'id': DateTime.now().toString(),
-                      'title': titleController.text,
-                      'category': categoryController.text,
-                      'amount': double.tryParse(amountController.text) ?? 0.0,
-                      'date': dateController.text,
-                    });
-                  });
+                  final amount = double.tryParse(amountController.text) ?? 0.0;
+                  
+                  // DIBETULKAN: Simpan ke Global Provider supaya HomePage berubah
+                  finance.addIncome(titleController.text, amount, selectedCategory);
+                  
                   Navigator.pop(context);
                 }
               },
@@ -101,7 +82,8 @@ class _IncomeManagementState extends State<IncomeManagement> {
     );
   }
 
-  void _confirmDelete(int index) {
+  void _confirmDelete(String id) {
+    final finance = Provider.of<FinanceProvider>(context, listen: false);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -111,7 +93,7 @@ class _IncomeManagementState extends State<IncomeManagement> {
           TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
           TextButton(
             onPressed: () {
-              setState(() => _incomeList.removeAt(index));
+              finance.removeIncome(id);
               Navigator.pop(context);
             },
             child: const Text("Delete", style: TextStyle(color: Colors.red)),
@@ -135,19 +117,18 @@ class _IncomeManagementState extends State<IncomeManagement> {
 
   @override
   Widget build(BuildContext context) {
-    double total = _incomeList.fold(0, (sum, item) => sum + item['amount']);
+    // DIBETULKAN: Ambil data dari Provider, bukan dari local list
+    final finance = Provider.of<FinanceProvider>(context);
+    final incomes = finance.incomes;
 
     return Scaffold(
       backgroundColor: bgColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: MouseRegion(
-          cursor: SystemMouseCursors.click,
-          child: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.black),
-            onPressed: widget.onBack ?? () => Navigator.pop(context),
-          ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: widget.onBack ?? () => Navigator.pop(context),
         ),
         title: Text('Income Management', style: GoogleFonts.inter(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 18)),
         centerTitle: true,
@@ -164,15 +145,15 @@ class _IncomeManagementState extends State<IncomeManagement> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 10),
-            _buildBalanceCard(total),
+            _buildBalanceCard(finance.totalIncome),
             const SizedBox(height: 32),
             Text('Recent Income', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black)),
             const SizedBox(height: 16),
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: _incomeList.length,
-              itemBuilder: (context, index) => _buildIncomeItem(_incomeList[index], index),
+              itemCount: incomes.length,
+              itemBuilder: (context, index) => _buildIncomeItem(incomes[index]),
             ),
             const SizedBox(height: 100),
           ],
@@ -195,7 +176,7 @@ class _IncomeManagementState extends State<IncomeManagement> {
         children: [
           Text('TOTAL INCOME', style: GoogleFonts.inter(color: Colors.white.withOpacity(0.8), fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1)),
           const SizedBox(height: 12),
-          FittedBox( // DIBETULKAN: Elak overflow pada amaun besar
+          FittedBox(
             fit: BoxFit.scaleDown,
             child: Text('RM ${total.toStringAsFixed(2)}', style: GoogleFonts.inter(color: Colors.white, fontSize: 34, fontWeight: FontWeight.w900)),
           ),
@@ -213,7 +194,7 @@ class _IncomeManagementState extends State<IncomeManagement> {
   }
 
   Widget _buildMiniStat(IconData icon, String label, String value) {
-    return Expanded( // DIBETULKAN: Gunakan Expanded supaya muat di skrin kecil
+    return Expanded(
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -233,7 +214,7 @@ class _IncomeManagementState extends State<IncomeManagement> {
     );
   }
 
-  Widget _buildIncomeItem(Map<String, dynamic> income, int index) {
+  Widget _buildIncomeItem(Map<String, dynamic> income) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
@@ -246,8 +227,8 @@ class _IncomeManagementState extends State<IncomeManagement> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(income['title'], style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black), overflow: TextOverflow.ellipsis),
-                Text(income['category'], style: GoogleFonts.inter(color: Colors.black38, fontSize: 11)),
+                Text(income['title'] ?? '', style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black), overflow: TextOverflow.ellipsis),
+                Text(income['category'] ?? '', style: GoogleFonts.inter(color: Colors.black38, fontSize: 11)),
               ],
             ),
           ),
@@ -257,17 +238,17 @@ class _IncomeManagementState extends State<IncomeManagement> {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  FittedBox(child: Text('RM ${income['amount'].toStringAsFixed(2)}', style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black))),
+                  FittedBox(child: Text('RM ${((income['amount'] ?? 0) as num).toStringAsFixed(2)}', style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black))),
                   const SizedBox(width: 4),
                   IconButton(
                     icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 18),
-                    onPressed: () => _confirmDelete(index),
+                    onPressed: () => _confirmDelete(income['id']),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                   ),
                 ],
               ),
-              Text(income['date'], style: GoogleFonts.inter(color: Colors.black38, fontSize: 10)),
+              Text(income['date'] ?? '', style: GoogleFonts.inter(color: Colors.black38, fontSize: 10)),
             ],
           ),
         ],

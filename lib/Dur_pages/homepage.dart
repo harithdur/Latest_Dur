@@ -3,10 +3,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:project_1/Dur_pages/transactions_page.dart';
 import 'dart:ui';
-// 1. Import Provider untuk guna Consumer
+// 1. Import Provider
 import 'package:provider/provider.dart';
 
-// 2. Import fail provider awak (sesuaikan path folder jika perlu)
+// 2. Import fail provider
 import 'package:project_1/Zahida_pages/providers.dart';
 
 class HomePage extends StatelessWidget {
@@ -23,7 +23,7 @@ class HomePage extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 48), // Padding dikecilkan sedikit
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 48), 
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -72,6 +72,7 @@ class HomePage extends StatelessWidget {
             _buildGlassBalanceCard(context, primaryPurple),
             const SizedBox(height: 32),
 
+            // DIBETULKAN: Bahagian ini sekarang dinamik ikut Provider
             _buildIncomeExpenseSummary().animate().fadeIn(delay: 150.ms, duration: 250.ms).slideX(begin: -0.05),
             const SizedBox(height: 32),
 
@@ -144,15 +145,10 @@ class HomePage extends StatelessWidget {
                   const SizedBox(height: 4),
                   Consumer<FinanceProvider>(
                     builder: (context, finance, child) {
-                      // Kita kira baki (Income - Expense)
-                      // Nota: Kalau belum ada field 'income' di Provider,
-                      // awak boleh tukar logic ni ikut kesesuaian
-                      double balance = 10500.00 - finance.totalExpenses;
-
                       return FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Text(
-                            'RM ${balance.toStringAsFixed(2)}',
+                            'RM ${finance.totalBalance.toStringAsFixed(2)}',
                             style: GoogleFonts.inter(color: Colors.white, fontSize: 38, fontWeight: FontWeight.bold)
                         ),
                       );
@@ -214,12 +210,30 @@ class HomePage extends StatelessWidget {
   }
 
   Widget _buildIncomeExpenseSummary() {
-    return Row(
-      children: [
-        Expanded(child: _summaryCard("Income", "RM 15,000", Icons.arrow_upward, Colors.green)),
-        const SizedBox(width: 12),
-        Expanded(child: _summaryCard("Expense", "RM 4,500", Icons.arrow_downward, Colors.redAccent)),
-      ],
+    return Consumer<FinanceProvider>(
+      builder: (context, finance, child) {
+        return Row(
+          children: [
+            Expanded(
+              child: _summaryCard(
+                "Income", 
+                "RM ${finance.totalIncome.toStringAsFixed(0)}", 
+                Icons.arrow_upward, 
+                Colors.green
+              )
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _summaryCard(
+                "Expense", 
+                "RM ${finance.totalExpenses.toStringAsFixed(0)}", 
+                Icons.arrow_downward, 
+                Colors.redAccent
+              )
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -239,13 +253,13 @@ class HomePage extends StatelessWidget {
             child: Icon(icon, color: color, size: 18), 
           ),
           const SizedBox(width: 8),
-          Expanded( // DIBETULKAN: Gunakan Expanded untuk elak ralat kuning
+          Expanded( 
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(label, style: GoogleFonts.inter(color: const Color(0xFF6B7280), fontSize: 11, fontWeight: FontWeight.w500), overflow: TextOverflow.ellipsis),
-                FittedBox( // DIBETULKAN: Mengecilkan teks jumlah jika ruang sempit
+                FittedBox( 
                   fit: BoxFit.scaleDown,
                   child: Text(amount, style: GoogleFonts.inter(color: const Color(0xFF111827), fontSize: 15, fontWeight: FontWeight.bold)),
                 ),
@@ -270,7 +284,7 @@ class HomePage extends StatelessWidget {
         effects: [FadeEffect(duration: 200.ms), ScaleEffect(begin: const Offset(0.9, 0.9))],
         children: [
           _imageMenuCard(context, 'Trans', const Color(0xFF8B5CF6), 'https://img.icons8.com/color/96/transaction.png', 1),
-          _imageMenuCard(context, 'Budget', const Color(0xFF3B82F6), 'https://img.icons8.com/color/96/budget.png', 5), // Index dilaraskan
+          _imageMenuCard(context, 'Budget', const Color(0xFF3B82F6), 'https://img.icons8.com/color/96/budget.png', 5), 
           _imageMenuCard(context, 'Incomes', const Color(0xFF10B981), 'https://img.icons8.com/color/96/money-box.png', 2),
           _imageMenuCard(context, 'Category', const Color(0xFFF59E0B), 'https://img.icons8.com/color/96/category.png', 7),
           _imageMenuCard(context, 'Goals', const Color(0xFFEC4899), 'https://img.icons8.com/color/96/goal.png', 6),
@@ -296,7 +310,7 @@ class HomePage extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Flexible(child: Image.network(imageUrl, width: 32, height: 32)), // Dikecilkan sedikit untuk skrin kecil
+              Flexible(child: Image.network(imageUrl, width: 32, height: 32)),
               const SizedBox(height: 6),
               Text(
                 title, 

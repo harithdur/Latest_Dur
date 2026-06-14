@@ -54,7 +54,7 @@ class TransactionsPage extends StatelessWidget {
                         Text('Groceries', style: GoogleFonts.inter(color: Colors.white70, fontSize: 14)),
                         FittedBox( // DIBETULKAN: Elak overflow pada amaun
                           fit: BoxFit.scaleDown,
-                          child: Text('RM 1,245.30', style: GoogleFonts.inter(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+                          child: Text('RM 0.00', style: GoogleFonts.inter(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
                         ),
                       ],
                     ),
@@ -65,9 +65,6 @@ class TransactionsPage extends StatelessWidget {
             const SizedBox(height: 32),
             Text('Latest transaction', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: primaryText)),
             const SizedBox(height: 16),
-            _buildTransactionItem('Supermart Groceries', 'Sep 14, 2025', '52.30', canvasGrey, primaryText),
-            _buildTransactionItem('Fresh Bakery', 'Sep 13, 2025', '30.45', canvasGrey, primaryText),
-            _buildTransactionItem('Gas Station', 'Sep 11, 2025', '45.06', canvasGrey, primaryText),
             const SizedBox(height: 100),
           ],
         ),
