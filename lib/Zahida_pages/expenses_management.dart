@@ -110,7 +110,7 @@ class ExpenseManagementPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final finance = Provider.of<FinanceProvider>(context);
-    
+
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
       appBar: AppBar(

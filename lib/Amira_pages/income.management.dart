@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart'; 
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart'; // Tambah ini
 import 'package:project_1/Zahida_pages/providers.dart'; // Tambah ini
 import 'category.management.dart';
@@ -61,16 +61,16 @@ class _IncomeManagementState extends State<IncomeManagement> {
             TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: primaryPurple, 
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
+                  backgroundColor: primaryPurple,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
               ),
               onPressed: () {
                 if (titleController.text.isNotEmpty && amountController.text.isNotEmpty) {
                   final amount = double.tryParse(amountController.text) ?? 0.0;
-                  
+
                   // DIBETULKAN: Simpan ke Global Provider supaya HomePage berubah
                   finance.addIncome(titleController.text, amount, selectedCategory);
-                  
+
                   Navigator.pop(context);
                 }
               },

@@ -96,16 +96,16 @@ class FinanceProvider extends ChangeNotifier {
   // Gantikan dari baris 'Future<void> addExpense...' sampai '}' penutupnya
   Future<void> addExpense(Expense expense) async {
     User? user = _auth.currentUser;
+    print("DEBUG ADD: User semasa adalah: ${user?.uid ?? 'NULL (GUEST MODE)'}");
 
     if (user == null) {
-      // MODE GUEST: Simpan dalam memori sahaja
       _expenses.insert(0, expense);
       notifyListeners();
       return;
     }
 
-    // MODE USER: Simpan ke Firebase
     try {
+      print("DEBUG ADD: Sedang hantar data ke user: ${user.uid}");
       await _firestore.collection('users').doc(user.uid).collection('transactions').add({
         'title': expense.description,
         'amount': expense.amount,
@@ -113,9 +113,11 @@ class FinanceProvider extends ChangeNotifier {
         'date': Timestamp.fromDate(expense.date),
         'type': 'expense',
       });
-      print("Berjaya simpan expense ke Firebase");
+
+      notifyListeners();
+      print("DEBUG ADD: Success!");
     } catch (e) {
-      print("Gagal simpan expense: $e");
+      print("DEBUG ADD: Fail! Error: $e");
     }
   }
 
@@ -146,6 +148,8 @@ class FinanceProvider extends ChangeNotifier {
         'date': Timestamp.now(),
         'type': 'income',
       });
+
+      notifyListeners();
       print("Berjaya simpan income ke Firebase");
     } catch (e) {
       print("Gagal simpan income: $e");

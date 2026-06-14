@@ -5,15 +5,20 @@ import 'firebase_options.dart';
 import 'package:project_1/Amira_pages/splash_screen.dart'; // Import SplashScreen
 import 'package:project_1/Zahida_pages/providers.dart';
 
+// fail: lib/main.dart
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Gunakan firebase_options.dart yang anda dah generate
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => FinanceProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => FinanceProvider()),
+      ],
       child: const MyApp(),
     ),
   );
