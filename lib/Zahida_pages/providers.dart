@@ -43,52 +43,85 @@ class FinanceProvider extends ChangeNotifier {
       }
     });
   }
+// 1. Dengar perubahan Expenses dari Firestore secara Real-Time
   void listenToExpenses() {
-    // 1. Batalkan stream lama jika ada supaya tidak berlaku pertindihan
+    User? user = _auth.currentUser;
+    if (user == null) return; // Jika Guest Mode, jangan buat apa-apa
+
+    // Batalkan langganan lama jika ada untuk elakkan memory leak
     _expenseSubscription?.cancel();
 
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-
-    // 2. Simpan stream baru ke dalam _expenseSubscription
-    _expenseSubscription = _firestore.collection('users').doc(user.uid).collection('transactions')
+    _expenseSubscription = _firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('transactions')
         .where('type', isEqualTo: 'expense')
-        .orderBy('date', descending: true)
-        .snapshots().listen((snapshot) {
+        .orderBy('date', descending: true) // Susun yang terkini di atas
+        .snapshots() // Menggunakan snapshots() untuk dapatkan realtime update
+        .listen((snapshot) {
       _expenses = snapshot.docs.map((doc) {
+        final data = doc.data();
+
+        // Tukar Timestamp Firestore kepada DateTime Dart
+        DateTime txDate = DateTime.now();
+        if (data['date'] != null) {
+          txDate = (data['date'] as Timestamp).toDate();
+        }
+
         return Expense(
           id: doc.id,
-          description: doc['title'] ?? '',
-          amount: (doc['amount'] as num).toDouble(),
-          category: doc['category'] ?? 'General',
-          date: (doc['date'] as Timestamp).toDate(),
+          // Pastikan data 'title' atau 'description' dipetakan dengan betul
+          description: data['title'] ?? data['description'] ?? '',
+          amount: (data['amount'] as num? ?? 0.0).toDouble(),
+          category: data['category'] ?? 'Food',
+          date: txDate,
         );
       }).toList();
-      notifyListeners();
+
+      notifyListeners(); // Memicu UI untuk update secara otomatis!
+    }, onError: (error) {
+      print("Ralat listenToExpenses: $error");
     });
   }
 
-  // Lakukan perkara yang sama untuk listenToIncomes
+  // 2. Dengar perubahan Incomes dari Firestore secara Real-Time
   void listenToIncomes() {
-    _incomeSubscription?.cancel(); // Batalkan stream lama
-
     User? user = _auth.currentUser;
     if (user == null) return;
 
-    _incomeSubscription = _firestore.collection('users').doc(user.uid).collection('transactions')
+    _incomeSubscription?.cancel();
+
+    _incomeSubscription = _firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('transactions')
         .where('type', isEqualTo: 'income')
         .orderBy('date', descending: true)
-        .snapshots().listen((snapshot) {
+        .snapshots() // Realtime stream
+        .listen((snapshot) {
       _incomes = snapshot.docs.map((doc) {
+        final data = doc.data();
+
+        DateTime txDate = DateTime.now();
+        if (data['date'] != null) {
+          txDate = (data['date'] as Timestamp).toDate();
+        }
+
+        // Formatkan tarikh menjadi String seperti "15 Jun" supaya sepadan dengan UI income.management.dart
+        String formattedDate = DateFormat('dd MMM').format(txDate);
+
         return {
           'id': doc.id,
-          'title': doc['title'],
-          'amount': doc['amount'],
-          'category': doc['category'],
-          'date': DateFormat('dd MMM').format((doc['date'] as Timestamp).toDate()),
+          'title': data['title'] ?? '',
+          'amount': (data['amount'] as num? ?? 0.0).toDouble(),
+          'category': data['category'] ?? 'Salary',
+          'date': formattedDate, // Format String dimasukkan ke sini
         };
       }).toList();
-      notifyListeners();
+
+      notifyListeners(); // Memicu UI untuk update secara otomatis!
+    }, onError: (error) {
+      print("Ralat listenToIncomes: $error");
     });
   }
 
