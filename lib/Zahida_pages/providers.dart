@@ -26,6 +26,9 @@ class FinanceProvider extends ChangeNotifier {
   double get totalBalance => totalIncome - totalExpenses;
   double get totalMonthlyCommitments => _recurringBills.fold(0.0, (sum, item) => sum + item.amount);
 
+  // ==========================================
+  // DIUBAH: Mengawal ketat pertukaran state login/logout
+  // ==========================================
   FinanceProvider() {
     FirebaseAuth.instance.authStateChanges().listen((User? user) {
       if (user != null) {
@@ -33,134 +36,129 @@ class FinanceProvider extends ChangeNotifier {
         listenToExpenses();
         listenToIncomes();
       } else {
-        // PENTING: Jika user log keluar (user == null), kita KOSONGKAN data
-        // supaya mode Guest atau akaun seterusnya bersih.
+        // Mod Guest / Log Keluar: Wajib kosongkan semua data lokal!
         _expenses = [];
         _incomes = [];
-        _expenseSubscription?.cancel(); // Hentikan stream lama
-        _incomeSubscription?.cancel();  // Hentikan stream lama
+        _recurringBills = [];
+
+        // Hentikan langganan stream lama supaya data User tidak bocor atau bertindih
+        _expenseSubscription?.cancel();
+        _incomeSubscription?.cancel();
         notifyListeners();
       }
     });
   }
-// 1. Dengar perubahan Expenses dari Firestore secara Real-Time
-  void listenToExpenses() {
-    User? user = _auth.currentUser;
-    if (user == null) return; // Jika Guest Mode, jangan buat apa-apa
 
-    // Batalkan langganan lama jika ada untuk elakkan memory leak
+  void listenToExpenses() {
+    // 1. Batalkan stream lama jika ada supaya tidak berlaku pertindihan
     _expenseSubscription?.cancel();
 
-    _expenseSubscription = _firestore
-        .collection('users')
-        .doc(user.uid)
-        .collection('transactions')
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    // 2. Simpan stream baru ke dalam _expenseSubscription
+    _expenseSubscription = _firestore.collection('users').doc(user.uid).collection('transactions')
         .where('type', isEqualTo: 'expense')
-        .orderBy('date', descending: true) // Susun yang terkini di atas
-        .snapshots() // Menggunakan snapshots() untuk dapatkan realtime update
-        .listen((snapshot) {
+        .orderBy('date', descending: true)
+        .snapshots().listen((snapshot) {
       _expenses = snapshot.docs.map((doc) {
         final data = doc.data();
 
-        // Tukar Timestamp Firestore kepada DateTime Dart
-        DateTime txDate = DateTime.now();
-        if (data['date'] != null) {
-          txDate = (data['date'] as Timestamp).toDate();
+        // Fungsi pembantu lokal untuk memberikan ikon mengikut kategori supaya tidak null
+        IconData getIcon(String cat) {
+          if (cat == 'Food') return Icons.restaurant;
+          if (cat == 'Transport') return Icons.directions_car;
+          if (cat == 'Bills') return Icons.receipt_long;
+          if (cat == 'Shopping') return Icons.shopping_bag;
+          return Icons.category;
+        }
+
+        // Fungsi pembantu lokal untuk memberikan warna mengikut kategori supaya tidak null
+        Color getColor(String cat) {
+          if (cat == 'Food') return Colors.orange;
+          if (cat == 'Transport') return Colors.blue;
+          if (cat == 'Bills') return Colors.green;
+          if (cat == 'Shopping') return Colors.pink;
+          return Colors.purple;
         }
 
         return Expense(
           id: doc.id,
-          // Pastikan data 'title' atau 'description' dipetakan dengan betul
           description: data['title'] ?? data['description'] ?? '',
           amount: (data['amount'] as num? ?? 0.0).toDouble(),
-          category: data['category'] ?? 'Food',
-          date: txDate,
+          category: data['category'] ?? 'General',
+          date: data['date'] != null ? (data['date'] as Timestamp).toDate() : DateTime.now(),
+          icon: getIcon(data['category'] ?? 'General'),
+          color: getColor(data['category'] ?? 'General'),
         );
       }).toList();
-
-      notifyListeners(); // Memicu UI untuk update secara otomatis!
-    }, onError: (error) {
-      print("Ralat listenToExpenses: $error");
+      notifyListeners();
     });
   }
 
-  // 2. Dengar perubahan Incomes dari Firestore secara Real-Time
+  // Lakukan perkara yang sama untuk listenToIncomes
   void listenToIncomes() {
+    _incomeSubscription?.cancel(); // Batalkan stream lama
+
     User? user = _auth.currentUser;
     if (user == null) return;
 
-    _incomeSubscription?.cancel();
-
-    _incomeSubscription = _firestore
-        .collection('users')
-        .doc(user.uid)
-        .collection('transactions')
+    _incomeSubscription = _firestore.collection('users').doc(user.uid).collection('transactions')
         .where('type', isEqualTo: 'income')
         .orderBy('date', descending: true)
-        .snapshots() // Realtime stream
-        .listen((snapshot) {
+        .snapshots().listen((snapshot) {
       _incomes = snapshot.docs.map((doc) {
         final data = doc.data();
-
-        DateTime txDate = DateTime.now();
-        if (data['date'] != null) {
-          txDate = (data['date'] as Timestamp).toDate();
-        }
-
-        // Formatkan tarikh menjadi String seperti "15 Jun" supaya sepadan dengan UI income.management.dart
-        String formattedDate = DateFormat('dd MMM').format(txDate);
+        DateTime dt = data['date'] != null ? (data['date'] as Timestamp).toDate() : DateTime.now();
 
         return {
           'id': doc.id,
           'title': data['title'] ?? '',
           'amount': (data['amount'] as num? ?? 0.0).toDouble(),
-          'category': data['category'] ?? 'Salary',
-          'date': formattedDate, // Format String dimasukkan ke sini
+          'category': data['category'] ?? 'General',
+          'date': DateFormat('dd MMM').format(dt),
         };
       }).toList();
-
-      notifyListeners(); // Memicu UI untuk update secara otomatis!
-    }, onError: (error) {
-      print("Ralat listenToIncomes: $error");
+      notifyListeners();
     });
   }
 
-  // --- KOD BARU UNTUK addExpense ---
-  // Gantikan dari baris 'Future<void> addExpense...' sampai '}' penutupnya
+  // ==========================================
+  // DIUBAH: Sekatan ketat penulisan data Guest Mode
+  // ==========================================
   Future<void> addExpense(Expense expense) async {
-    User? user = _auth.currentUser;
-    print("DEBUG ADD: User semasa adalah: ${user?.uid ?? 'NULL (GUEST MODE)'}");
+    User? currentUser = FirebaseAuth.instance.currentUser;
 
-    if (user == null) {
+    if (currentUser == null) {
+      // MODE GUEST: Simpan dalam memori sahaja dan terus SEKAT (return) supaya tidak ke Firestore
       _expenses.insert(0, expense);
       notifyListeners();
       return;
     }
 
+    // MODE USER: Hanya hantar ke Firestore jika currentUser terbukti ada
     try {
-      print("DEBUG ADD: Sedang hantar data ke user: ${user.uid}");
-      await _firestore.collection('users').doc(user.uid).collection('transactions').add({
+      await _firestore.collection('users').doc(currentUser.uid).collection('transactions').add({
         'title': expense.description,
         'amount': expense.amount,
         'category': expense.category,
         'date': Timestamp.fromDate(expense.date),
         'type': 'expense',
       });
-
-      notifyListeners();
-      print("DEBUG ADD: Success!");
+      // Tidak perlu notifyListeners() di sini kerana diuruskan oleh stream snapshots secara real-time
     } catch (e) {
-      print("DEBUG ADD: Fail! Error: $e");
+      print("Gagal simpan expense ke Firebase: $e");
     }
   }
 
-  // --- KOD BARU UNTUK addIncome ---
-  // Gantikan dari baris 'Future<void> addIncome...' sampai '}' penutupnya
+  // ==========================================
+  // DIUBAH: Sekatan ketat penulisan data Guest Mode
+  // ==========================================
   Future<void> addIncome(String title, double amount, String category) async {
-    User? user = _auth.currentUser;
+    User? currentUser = FirebaseAuth.instance.currentUser;
 
-    if (user == null) {
-      // MODE GUEST: Simpan dalam memori sahaja
+    if (currentUser == null) {
+      // MODE GUEST: Simpan dalam memori sahaja dan terus SEKAT (return) supaya tidak ke Firestore
       _incomes.insert(0, {
         'id': DateTime.now().toString(),
         'title': title,
@@ -172,22 +170,21 @@ class FinanceProvider extends ChangeNotifier {
       return;
     }
 
-    // MODE USER: Simpan ke Firebase
+    // MODE USER: Hanya hantar ke Firestore jika currentUser terbukti ada
     try {
-      await _firestore.collection('users').doc(user.uid).collection('transactions').add({
+      await _firestore.collection('users').doc(currentUser.uid).collection('transactions').add({
         'title': title,
         'amount': amount,
         'category': category,
         'date': Timestamp.now(),
         'type': 'income',
       });
-
-      notifyListeners();
-      print("Berjaya simpan income ke Firebase");
+      // Tidak perlu notifyListeners() di sini kerana diuruskan oleh stream snapshots secara real-time
     } catch (e) {
       print("Gagal simpan income: $e");
     }
   }
+
   Future<void> removeExpense(String id) async {
     User? user = _auth.currentUser;
     if (user == null) {
@@ -218,32 +215,23 @@ class FinanceProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Tambah dalam lib/Dur_pages/providers.dart
-
   Future<void> resetAllData() async {
     User? user = _auth.currentUser;
 
     if (user == null) {
-      // --- MODE GUEST: Reset memori sahaja ---
       _expenses = [];
       _incomes = [];
       _recurringBills = [];
       notifyListeners();
     } else {
-      // --- MODE USER: Padam semua data dalam Firestore ---
       try {
-        // Dapatkan rujukan koleksi transaksi
         final collectionRef = _firestore.collection('users').doc(user.uid).collection('transactions');
-
-        // Ambil semua dokumen dalam koleksi tersebut
         final snapshot = await collectionRef.get();
 
-        // Padam setiap dokumen satu demi satu
         for (var doc in snapshot.docs) {
           await doc.reference.delete();
         }
 
-        // Reset list dalam aplikasi
         _expenses = [];
         _incomes = [];
         _recurringBills = [];
@@ -253,6 +241,4 @@ class FinanceProvider extends ChangeNotifier {
       }
     }
   }
-
 }
-

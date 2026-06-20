@@ -212,12 +212,20 @@ class _LoginPageState extends State<LoginPage> {
                         MouseRegion(
                           cursor: SystemMouseCursors.click,
                           child: GestureDetector(
-                            onTap: () {
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(builder: (context) => const SubMain()),
-                              );
+                            // ==========================================
+                            // DIUBAH: Memaksa logout sebelum masuk Guest Mode
+                            // ==========================================
+                            onTap: () async {
+                              await FirebaseAuth.instance.signOut(); // Paksa bersihkan token user lama
+
+                              if (context.mounted) {
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const SubMain()),
+                                );
+                              }
                             },
+                            // ==========================================
                             child: Text(
                               'Skip for now',
                               style: TextStyle(color: textSecondary.withOpacity(0.6), fontSize: 12, decoration: TextDecoration.underline),
